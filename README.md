@@ -1,9 +1,13 @@
 # README #
-Main goal of this tool is to identify the tables which are part of client setupData.  
-In our ams-web, all the Setup table should be recorded in SETUP_COLUMN_ID table.  
-Approach here would be comparing two SETUP_COLUMN_ID.xml file(one from AA standards and other one from client) and find all the T-List and diff the content for those tables.  
-Tool will extract the results into an excel file.
-
+Main goal of this tool is help migration process easier. This tool helps in comparing two different database with datatypes, row counts.
+Also facilitate transfer data from one to another(currently only Oracle -> Postgres is supported).
+This tool is using redis server to process the transactions. More the worker, much faster the jobs will be completed.
+### Few Highlights ###
+1. Transfer data (GEOM not yet)
+2. Compare two database for row counts
+3. Truncate content of specific table
+4. Enable Triggers
+5. Disable Triggers
 ## Summary ##
 
 ## Setup / Installation ##

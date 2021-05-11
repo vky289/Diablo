@@ -154,7 +154,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     messages.error(request, "Cannot compare same DB!")
                     return HttpResponseRedirect(reverse('dbs:compare_db'))
                 compare_db_rows.delay(src_db, dst_db)
-                # compare_db_data_types.delay(src_db, dst_db)
+                compare_db_data_types.delay(src_db, dst_db)
                 # any_db(src_db, dst_db).c_db()
                 messages.info(request, f'DB table row comparisons started!')
             if self.request.POST.get('truncate'):

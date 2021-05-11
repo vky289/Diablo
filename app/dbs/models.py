@@ -20,15 +20,6 @@ class DBInstance(models.Model):
         return self.name
 
 
-class SYSettings(models.Model):
-    name = models.CharField(primary_key=True, max_length=100, blank=False)
-    settings = models.CharField(max_length=400, blank=False)
-    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, default=None)
-
-    def __str__(self):
-        return self.name
-
-
 class DBTableCompare(models.Model):
     id = models.AutoField(primary_key=True)
     table_name = models.CharField(max_length=400, blank=False)

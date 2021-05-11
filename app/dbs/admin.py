@@ -1,5 +1,5 @@
 from django.contrib import admin
-from app.dbs.models import DBInstance, SYSettings
+from app.dbs.models import DBInstance
 
 
 class DBInstanceAdmin(admin.ModelAdmin):
@@ -16,13 +16,4 @@ class DBInstanceAdmin(admin.ModelAdmin):
     )
 
 
-class DBSettingsAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'settings',
-        'added_by',
-    )
-
-
 admin.site.register(DBInstance, DBInstanceAdmin)
-admin.site.register(SYSettings, DBSettingsAdmin)

@@ -1,7 +1,6 @@
 import cx_Oracle
 import psycopg2
 import logging
-from app.dbs.models import SYSettings
 
 
 class postgres_db:
@@ -23,8 +22,6 @@ class postgres_db:
 
 
 class oracle_db:
-    # cx_Oracle.init_oracle_client(lib_dir=SYSettings.objects.get(name='cx_oracle_home)
-    cx_Oracle.init_oracle_client(lib_dir='/Users/vsellamuthu/software/instantclient_19_8')
 
     def __init__(self, args1):
         self.conn = None
