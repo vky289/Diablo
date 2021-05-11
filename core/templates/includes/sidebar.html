@@ -1,0 +1,51 @@
+
+
+    <div class="sidebar" data="blue">
+      <div class="sidebar-wrapper">
+
+        <ul class="nav">
+        {% if request.user.is_authenticated %}
+<!--          <li class="{% if 'home' in segment %} active {% endif %} ">-->
+<!--            <a href="/">-->
+<!--              <i class="tim-icons icon-bank"></i>-->
+<!--              <p>Home</p>-->
+<!--            </a>-->
+<!--          </li>-->
+          <li class="{% if 'view-db' in segment %} active {% endif %} ">
+            <a href="{% url 'dbs:db_details' %}">
+              <i class="tim-icons icon-simple-add"></i>
+              <p>View DB</p>
+            </a>
+          </li>
+          <li class="{% if 'compare-db' in segment %} active {% endif %} ">
+            <a href="{% url 'dbs:compare_db' %}">
+              <i class="tim-icons icon-atom"></i>
+              <p>Compare DB</p>
+            </a>
+          </li>
+          <li class="{% if 'queue' in segment %} active {% endif %}">
+            <a href="{% url 'core:current_rq_queue' %}">
+              <i class="tim-icons icon-cart"></i>
+              <p>Current Queue</p>
+            </a>
+          </li>
+          <li class="{% if 'notifications' in segment %} active {% endif %}">
+            <a href="{% url 'auth:notifications' %}">
+              <i class="tim-icons icon-bell-55"></i>
+              <p>Notifications</p>
+            </a>
+          </li>
+          {% else %}
+          <li class="active">
+            <a target="_blank" 
+               href="">
+              <i class="tim-icons icon-spaceship"></i>
+              <p>Help</p>
+            </a>
+          </li>   
+          {% endif %}
+                    
+        </ul>
+        
+      </div>
+    </div>

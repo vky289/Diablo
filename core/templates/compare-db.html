@@ -1,0 +1,127 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %} Page Blank {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="title">Compare</h5>
+                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#showResults">Show Results</button>
+            </div>
+            <div class="card-body">
+                <form action="{% url 'dbs:compare_db_res' %}" method="post">
+                    {% csrf_token %}
+                    <table class="table table-striped col-md">
+                        <tr>
+                            <th>Source</th>
+                            <th>Destination</th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="form-group">
+                                    {% for db_in in db_instance %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="src_db"
+                                               id="sourceDB{{ db_in.id }}" value="{{ db_in.id }}">
+                                        <label class="form-check-label btn btn-outline-danger" for="sourceDB{{ db_in.id }}">
+                                            {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                            (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    {% for db_in in db_instance %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="dst_db"
+                                               id="destinationDB{{ db_in.id }}" value="{{ db_in.id }}">
+                                        <label class="form-check-label btn btn-outline-danger" for="destinationDB{{ db_in.id }}">
+                                            {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                            (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="form-group">
+                        <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare it!</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="showResults" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="p-3 mb-2 bg-default text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title text-info">Results</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row justify-content-center w-100">
+                        <div class="col w-100">
+                            <table class="table table-striped col-md">
+                                <tr>
+                                    <th class="cols">Source DB</th>
+                                    <th class="cols">Destination DB</th>
+                                    <th class="cols">Results</th>
+                                </tr>
+                                {% for results in compare_q %}
+                                <tr>
+                                    <td>
+                                        {{ results.0.name }} - {{ results.0.username }} @ {{ results.0.host }} : {{ results.0.port }}
+                                        ({% if results.0.type == 'oracle' %}
+                                        <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
+                                        {% else%}
+                                        <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
+                                        {%endif %})
+                                    </td>
+                                    <td>
+                                        {{ results.1.name }} - {{ results.1.username }} @ {{ results.1.host }} : {{ results.1.port }}
+                                        ({% if results.1.type == 'oracle' %}
+                                        <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
+                                        {% else%}
+                                        <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
+                                        {%endif %})
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'dbs:compare_db_results' id1=results.0.id id2=results.1.id %}" >
+                                            <button class="btn btn-info">Take me there</button>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

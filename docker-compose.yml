@@ -1,0 +1,12 @@
+version: '3.6'
+services:
+  postgres:
+    image: postgres:12.3
+    environment:
+      POSTGRES_PASSWORD: diablo
+      POSTGRES_USER: diablo
+      POSTGRES_DB: diablo
+    ports:
+      - 127.0.0.1:6432:5432
+    volumes:
+      - ./volumes:/var/lib/postgresql/data:cached

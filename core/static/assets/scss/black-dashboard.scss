@@ -1,0 +1,88 @@
+
+/*!
+
+*/
+
+ // Core
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/functions";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/functions";
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/variables";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/variables";
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/mixins";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/mixins";
+
+ // Bootstrap components
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/root";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/reboot";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/type";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/images";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/code";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/grid";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/tables";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/forms";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/buttons";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/transitions";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/dropdown";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/button-group";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/input-group";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/custom-forms";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/nav";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/navbar";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/card";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/breadcrumb";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/pagination";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/badge";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/jumbotron";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/alert";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/progress";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/media";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/list-group";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/close";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/modal";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/tooltip";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/popover";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/carousel";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/utilities";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/bootstrap/print";
+
+ // Custom components
+
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/alerts";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/buttons";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/dropdown";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/footer";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/forms";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/images";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/modal";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/navbar";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/type";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/tables";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/checkboxes-radio";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/fixed-plugin";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/sidebar-and-main-panel";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/misc";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/rtl";
+ @import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/input-group";
+
+
+ // Vendor / Plugins
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/vendor/plugin-perfect-scrollbar";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/vendor/plugin-animate-bootstrap-notify";
+
+// light mode
+
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/white-content";
+
+// Cards
+
+@import 'agiledev/diablo/core/static/assets/scss/black-dashboard/custom/card';
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/cards/card-chart";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/cards/card-map";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/cards/card-user";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/cards/card-task";
+@import "agiledev/diablo/core/static/assets/scss/black-dashboard/custom/cards/card-plain";

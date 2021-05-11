@@ -1,0 +1,49 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Page Blank {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Current Queue ({{ pending_job }})</h5>
+                <form action="{% url 'core:current_rq_queue' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-info">Update Results</button>
+                </form>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Job</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Created At</th>
+                        <th scope="col">Ended At</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                    {% for job in current_queue %}
+                        <tr>
+                            <td>{{ job.id }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.func_name }}</td>
+                            <td>{{ job.created_at }}</td>
+                            <td>{{ job.ended_at }}</td>
+                            <td>{{ job.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+    
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

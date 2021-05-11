@@ -1,0 +1,124 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %} {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+<!-- MDBootstrap Datatables  -->
+<link href="{% static 'assets/css//datatables.min.css' %}" rel="stylesheet">
+
+
+{% endblock stylesheets %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Results</h5>
+                    <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
+                        <a href="{% url 'dbs:compare_db_results' id1 id2 %}">
+                            <button type="button" class="btn btn-info">Update Results</button>
+                        </a>
+                        <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare Again!</button>
+                        {% csrf_token %}
+                        <input class="form-check-input" type="text" name="src_db"
+                               value="{{ id1 }}" hidden>
+                        <input class="form-check-input" type="text" name="dst_db"
+                               value="{{ id2 }}" hidden>
+
+                        <div class="justify-content-end">
+                            <p class="float-right">
+                                <button class="btn btn-success" type="submit" name="enableTrigger" value="enableTrigger">Enable All
+                                Trigger
+                                </button>
+                                <button class="btn btn-warning" type="submit" name="disableTrigger" value="disableTrigger">Disable
+                                    All Trigger
+                                </button>
+                                <p class="float-left">
+                                    <a href="bulk-copy-data.html" data-target="#bulkImportModal" data-toggle="modal">
+                                        <button class="btn btn-success" type="button" name="bulkImport" value="bulkImport">Bulk Import
+                                    </button></a>
+                                </p>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="container bg-neutral mw-100 justify-content-end">
+                        <p class="float-left">
+                            <div class="form-group align-left mw-100">
+                            {% if src_db_v %}
+                                <i class="fa fa-arrow-up" aria-hidden="true"></i>
+                                {{ src_db_v.name }} - {{ src_db_v.username }} @ {{ src_db_v.host }} : {{ src_db_v.port }}
+                                (<img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
+                            {% endif %}
+                            </div>
+                            <p class="float-right">
+                                <div class="form-group align-right mw-100">
+                                {% if dst_db_v %}
+                                    <i class="fa fa-arrow-down" aria-hidden="true"></i>
+                                    {{ dst_db_v.name }} - {{ dst_db_v.username }} @ {{ dst_db_v.host }} : {{ dst_db_v.port }}
+                                    (<img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
+                                {% endif %}
+                                </div>
+                            </p>
+                        </p>
+                    </div>
+                    {% if db_compare_results %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm" cellspacing="0" width="100%">
+                            <tr>
+                                <th scope="col">Table Name</th>
+                                <th scope="col">Oracle Count</th>
+                                <th scope="col">PG Count</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            {% for res in db_compare_results %}
+                                <tr>
+                                    <td>{{ res.table_name }}</td>
+                                    <td>{{ res.src_row_count }}</td>
+                                    <td>{{ res.dst_row_count }}</td>
+                                    <td class="text-lg-center">
+                                        <form method="post"
+                                              action="{% url 'dbs:compare_db_results' id1 id2 res.table_name res.src_row_count %}">
+                                            {% csrf_token %}
+                                            <button  type="submit" name="copy" value="copy" class="btn btn-icon btn-info"
+                                                               title="Copy to PG"><i
+                                                class="fa fa-long-arrow-alt-right" aria-hidden="true"></i><i
+                                                class="fa fa-long-arrow-alt-left" aria-hidden="true"></i>
+                                            </button>
+                                            <button type="submit" name="truncate" value="truncate" class="btn btn-icon btn-danger"
+                                                    title="Truncate PG table"><i class="fa fa-trash" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+<div class="modal fade text-center" id="bulkImportModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+    $('.li-modal').on('click', function(e){
+        e.preventDefault();
+        $('#bulkImportModal').modal('show').find('.modal-content').load($(this).attr('href'));
+    });
+</script>
+{% endblock javascripts %}

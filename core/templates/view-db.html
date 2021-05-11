@@ -1,0 +1,163 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %} Page User {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="title">Database</h5>
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addDBDialog">Add New</button>
+      </div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Host</th>
+            <th scope="col">Port</th>
+            <th scope="col">Username</th>
+            <th scope="col">Password</th>
+            <th scope="col">SID</th>
+            <th scope="col">Service</th>
+            <th scope="col">Type</th>
+          </tr>
+          {% for db_in in dbinstance_list %}
+          <tr>
+            <td>
+              <a href="{% url 'dbs:db_edit_details' db_in.id %}">
+                <button type="button" class="btn btn-outline-danger" name="{{ db_in.id }}">
+                  {{ db_in.name }}
+                </button>
+              </a>
+            </td>
+            <td>{{ db_in.host }}</td>
+            <td>{{ db_in.port }}</td>
+            <td>{{ db_in.username }}</td>
+            <td>{{ db_in.password }}</td>
+            <td>
+              {% if db_in.sid %}
+                {{ db_in.sid }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if db_in.service %}
+              {{ db_in.service }}
+              {% else %}
+              -
+              {% endif %}
+            </td>
+            <td>
+              {% if db_in.type == 'oracle' %}
+              <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
+              {% else%}
+              <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
+              {%endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addDBDialog" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="p-3 mb-2 bg-default text-white">
+      <div class="modal-header">
+        <h5 class="modal-title text-info">Add Database</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form action="#" method="post">
+        <div class="modal-body">
+          {% csrf_token %}
+          <div class="row justify-content-center w-100">
+            <div class="col w-100">
+              <div class="form-group">
+                <label class="col-mod-4">Name</label>
+                <input type="text" name="name" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">Host</label>
+                <input type="text" name="host" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">Port</label>
+                <input type="number" name="port" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">Username</label>
+                <input type="text" name="username" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">Password</label>
+                <input type="text" name="password" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">SID</label>
+                <input type="text" name="sid" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">Service</label>
+                <input type="text" name="service" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4" for="inlineFormCustomSelect">Type</label>
+                <select name="type" id="inlineFormCustomSelect">
+                  {% for db in db_types %}
+                  <option value="{{ db.value }}">{{ db.value }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Save changes</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  $(document).ready(function(){
+
+    $('.btn-outline-danger').click(function(){
+      let modalContentInit = $(".btn-outline-danger .modal-body").html();
+
+      //On modal close:
+      $(".modal.btn-outline-danger").on("fade.bs.modal", function () {
+        //Reset modal to initial values:
+        $("#addDBDialog .modal-body").html(modalContentInit);
+        $('#addDBDialog .modal-dialog').attr('class','modal-dialog');
+      });
+
+      $(document).on('shown.bs.modal', '#addDBDialog', function (e) {
+        var button = $(e.relatedTarget);
+        var db_id = button.attr('data-name');;
+        $('input[name="name"]').val = db_id;
+
+      });
+
+    });
+  });
+</script>
+{% endblock javascripts %}
