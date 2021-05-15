@@ -7,7 +7,14 @@
 {% block stylesheets %}
 
 <!-- MDBootstrap Datatables  -->
-<link href="{% static 'assets/css//datatables.min.css' %}" rel="stylesheet">
+<style>
+    .modal-body{
+        height: 80vh;
+        overflow-y: auto;
+    }
+</style>
+<!--<link href="{% static 'assets/css/datatables.min.css' %}" rel="stylesheet">-->
+<link href="{% static 'assets/css/bootstrap-select.css' %}" rel="stylesheet" />
 
 
 {% endblock stylesheets %}
@@ -15,7 +22,7 @@
 {% block content %}
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-xl">
             <div class="card">
                 <div class="card-header">
                     <h5>Results</h5>
@@ -39,7 +46,7 @@
                                     All Trigger
                                 </button>
                                 <p class="float-left">
-                                    <a href="bulk-copy-data.html" data-target="#bulkImportModal" data-toggle="modal">
+                                    <a href="" data-target="#bulkImportModal" data-toggle="modal">
                                         <button class="btn btn-success" type="button" name="bulkImport" value="bulkImport">Bulk Import
                                     </button></a>
                                 </p>
@@ -79,7 +86,16 @@
                             </tr>
                             {% for res in db_compare_results %}
                                 <tr>
-                                    <td>{{ res.table_name }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-social"
+                                                data-toggle="modal"
+                                                data-remote="{% url 'dbs:compare_data_types' id1 id2 res.table_name %}"
+                                                data-target="#dataTypeCompareModal">{{ res.table_name }}
+                                        </button>
+                                        {% if res.geom == True %}
+                                            <i class="fa fa-globe" aria-hidden="true"></i>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ res.src_row_count }}</td>
                                     <td>{{ res.dst_row_count }}</td>
                                     <td class="text-lg-center">
@@ -105,9 +121,63 @@
             </div>
         </div>
     </div>
-<div class="modal fade text-center" id="bulkImportModal">
+<div class="modal fade" id="bulkImportModal">
     <div class="modal-dialog">
+        <div class="modal-content bg-neutral text-darker">
+            <div class="p-3 mb-2 bg-neutral text-darker">
+                <div class="modal-header">
+                    <h5 class="modal-title text-info">Bulk Import Tool</h5>
+                    <button type="button" class="close" data-dismiss="modal">X</button>
+                </div>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <select class="selectpicker" multiple data-live-search="true" data-width="auto" data-style="btn-success"
+                                        name="bulkTables">
+                                    {% for res in db_compare_res_bulk %}
+                                    {% if res.src_row_count != res.dst_row_count %}
+                                    <option value="{{ res.table_name }}({{ res.src_row_count }})">{{ res.table_name }}({{ res.src_row_count }})</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-info" name="bulkCopy" value="bulkCopy">Proceed</button>
+                            <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model -->
+<div class="modal fade" id="dataTypeCompareModal" tabindex="-1"
+     role="dialog" aria-labelledby="" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
+            <div class="p-3 mb-2 bg-neutral text-black-50">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="modal-title" id="myModalLabel">Data <> Type</h3>
+                </div>
+                <div class="modal-body">
+                    -------
+                    <p>
+                        <i class="tim-icons icon-atom" aria-label="loading"></i>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -115,10 +185,12 @@
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 <script type="text/javascript">
-    $('.li-modal').on('click', function(e){
-        e.preventDefault();
-        $('#bulkImportModal').modal('show').find('.modal-content').load($(this).attr('href'));
+    $('select').selectpicker();
+
+    $('body').on('click', '[data-toggle="modal"]', function(){
+        $($(this).data("target")+' .modal-body').load($(this).data("remote"));
     });
 </script>
 {% endblock javascripts %}

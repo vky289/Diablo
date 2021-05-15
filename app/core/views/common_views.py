@@ -12,13 +12,16 @@ from rq.job import Job
 from app.core.models import RQQueue
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from app.dbs.models import DBCompare, DBStats
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
 
 
 redis = Redis(host="localhost", db=0, port= 6379, socket_connect_timeout=10, socket_timeout=10)
 
 
 class DjangoRQDetailView(PermissionRequiredMixin, ListView):
-    permission_required = 'accounts.action_all'
+    permission_required = 'dbs.add_dbinstance'
     template_name = 'current-queue.html'
     model = RQQueue
 
@@ -72,10 +75,33 @@ class DjangoRQDetailView(PermissionRequiredMixin, ListView):
 
 @login_required(login_url="/login/")
 def index(request):
+    month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    dataset = DBCompare.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
+    dataset2 = DBStats.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
+    ss = {}
+    for dd in dataset:
+        ss[dd.get('month').strftime("%b")] = dd.get('c')
+    ss2 = {}
+    for dd in dataset2:
+        ss2[dd.get('month').strftime("%b")] = dd.get('c')
 
     context = {}
     context['segment'] = 'home'
+    final_dataset = []
+    final_dataset2 = []
+    for m_l in month_list:
+        if ss.get(m_l) is None:
+            final_dataset.append({'month': m_l, 'compared': 0})
+        else:
+            final_dataset.append({'month': m_l, 'compared': ss.get(m_l)})
+    for m_l in month_list:
+        if ss2.get(m_l) is None:
+            final_dataset2.append({'month': m_l, 'table_count': 0})
+        else:
+            final_dataset2.append({'month': m_l, 'table_count': ss2.get(m_l)})
 
+    context['dataset'] = final_dataset
+    context['rows_insert'] = final_dataset2
     html_template = loader.get_template( 'index.html' )
     return HttpResponse(html_template.render(context, request))
 

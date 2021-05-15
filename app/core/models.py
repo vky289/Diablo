@@ -12,3 +12,12 @@ class RQQueue(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SYSetting(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, blank=False)
+    value = models.CharField(max_length=1000, blank=False)
+
+    def __str__(self):
+        return self.name + " - " + self.value

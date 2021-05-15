@@ -5,12 +5,12 @@
 
         <ul class="nav">
         {% if request.user.is_authenticated %}
-<!--          <li class="{% if 'home' in segment %} active {% endif %} ">-->
-<!--            <a href="/">-->
-<!--              <i class="tim-icons icon-bank"></i>-->
-<!--              <p>Home</p>-->
-<!--            </a>-->
-<!--          </li>-->
+          <li class="{% if 'home' in segment %} active {% endif %} ">
+            <a href="/">
+              <i class="tim-icons icon-app"></i>
+              <p>Home</p>
+            </a>
+          </li>
           <li class="{% if 'view-db' in segment %} active {% endif %} ">
             <a href="{% url 'dbs:db_details' %}">
               <i class="tim-icons icon-simple-add"></i>

@@ -1,13 +1,14 @@
 import logging
 
 from psycopg2._psycopg import AsIs
+from psycopg2.extras import execute_values as exe_val
+import cx_Oracle
 
+import itertools
 from utils.enums import DbType
 from utils.db_connection import oracle_db, postgres_db
 from utils.queries import O_TABLE_EXISTS, P_TABLE_EXISTS
-import cx_Oracle
-import itertools
-from psycopg2.extras import execute_values as exe_val
+from app.core.models import SYSetting
 
 
 class scrapper:
@@ -193,7 +194,15 @@ class scrapper:
         return prim_key
 
     def prepare_stmt(self, rows, values):
-        col_to_avoid = ['ROW_NUM', 'COMMENT_ID', "CLUSTERING_ENABLED"]
+        col_to_avoid = ['ROW_NUM', 'COMMENT_ID']
+        try:
+            cols = SYSetting.objects.get(name="COL_TO_AVOID")
+            c_to_a = cols.value
+            for i in c_to_a.split(','):
+                if i not in col_to_avoid:
+                    col_to_avoid.append(i)
+        except SYSetting.DoesNotExist:
+            pass
         fin_rows = ''
         fin_set = ()
         i = 0
@@ -268,7 +277,7 @@ class scrapper:
         return data, col_names
 
     def insert_row(self, table_name, list_values, col_names, row_count=None, commit_interval=10000, commit_each=False):
-        err_rec = itertools.count()
+        err_rec = 0
         cont = itertools.count()
         q_tuple_list = []
         try:
@@ -291,7 +300,8 @@ class scrapper:
                     except Exception as w:
                         self.log.error("Error in inserting table {}".format(str(w)))
                         self.conn.rollback()
-                        next(err_rec)
+                        if not commit_each:
+                            err_rec += (1 * commit_interval)
                 else:
                     q_tuple_list.append(my_tup)
 
@@ -307,11 +317,13 @@ class scrapper:
             except Exception as w:
                 self.log.error("Error in inserting table {}".format(str(w)))
                 self.conn.rollback()
-                next(err_rec)
+                if not commit_each:
+                    err_rec += (1 * commit_interval)
             self.log.debug("Total Records to insert : {}, Inserted Records {}, "
-                           "Error inserting records : {}".format(str(row_count), str(cur_cont), str(next(err_rec) - 1)))
+                           "Error inserting records : {}".format(str(row_count), str(cur_cont), str(err_rec)))
             if self.conn is not None:
                 self.conn.close()
+            return cur_cont, err_rec
 
 
     def construct_geom(self, raw_object):

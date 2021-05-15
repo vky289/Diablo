@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped">
+            <tr>
+                <th class="cols">Column Name</th>
+                <th class="cols">Oracle Datatype</th>
+                <th class="cols">PG Datatype</th>
+            </tr>
+            {% for res in data_type_compare_res %}
+            <tr>
+                <td>{{ res.column_name }}</td>
+                <td>{{ res.oracle_data_type }}</td>
+                <td>{{ res.pg_data_type }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>

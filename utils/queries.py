@@ -53,12 +53,18 @@ O_TABLE_EXISTS = '''select count(*)
 P_TABLE_EXISTS = '''SELECT count(*) FROM information_schema.tables
                                    WHERE  table_schema = %(SCHEMA)s
                                    AND    table_name   = %(TABLE)s'''
-O_COLUMN_NAMES = '''select col.table_name, col.column_name, col.data_type
+O_COLUMN_NAMES = '''select col.table_name as table_name, col.column_name as column_name, col.data_type as data_type, CASE WHEN col.DATA_SCALE is NULL THEN to_char(col
+.DATA_LENGTH) ELSE to_char(col.DATA_LENGTH) || ',' || to_char(col.DATA_SCALE) END as PRECISION
                                 from sys.all_tab_columns col
                                          inner join sys.all_tables t on col.owner = t.owner
                                     and col.table_name = t.table_name
                                 where col.owner = :SCH'''
-P_COLUMN_NAMES = '''SELECT UPPER(table_name), UPPER(column_name), UPPER(data_type) FROM information_schema.columns WHERE table_schema = %(SCH)s'''
+P_COLUMN_NAMES = '''SELECT UPPER(table_name) as table_name, UPPER(column_name) as column_name, UPPER(data_type) as data_type, case when character_maximum_length is not
+    null then  character_maximum_length::text
+    else
+    CONCAT(numeric_precision::text, ',', numeric_scale::text) end as precision
+FROM information_schema.columns
+WHERE table_schema = $SCHEMA'''
 O_ROW_COUNT = '''SELECT table_name,num_rows FROM all_tables WHERE owner = :SCH'''
 P_ROW_COUNT = '''select UPPER(table_name), 
        (xpath('/row/cnt/text()', xml_count))[1]::text::bigint as row_count

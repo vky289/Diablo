@@ -26,29 +26,29 @@
                         <tr>
                             <td>
                                 <div class="form-group">
-                                    {% for db_in in db_instance %}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="src_db"
-                                               id="sourceDB{{ db_in.id }}" value="{{ db_in.id }}">
-                                        <label class="form-check-label btn btn-outline-danger" for="sourceDB{{ db_in.id }}">
-                                            {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
-                                            (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
-                                        </label>
-                                    </div>
+                                    {% for db_in in db_instance_or %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="src_db"
+                                                   id="sourceDB{{ db_in.id }}" value="{{ db_in.id }}">
+                                            <label class="form-check-label btn btn-outline-danger" for="sourceDB{{ db_in.id }}">
+                                                {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                                (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
+                                            </label>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </td>
                             <td>
                                 <div class="form-group">
-                                    {% for db_in in db_instance %}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="dst_db"
-                                               id="destinationDB{{ db_in.id }}" value="{{ db_in.id }}">
-                                        <label class="form-check-label btn btn-outline-danger" for="destinationDB{{ db_in.id }}">
-                                            {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
-                                            (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
-                                        </label>
-                                    </div>
+                                    {% for db_in in db_instance_pg %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="dst_db"
+                                                   id="destinationDB{{ db_in.id }}" value="{{ db_in.id }}">
+                                            <label class="form-check-label btn btn-outline-danger" for="destinationDB{{ db_in.id }}">
+                                                {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                                (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
+                                            </label>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </td>
@@ -66,7 +66,7 @@
 <div class="modal fade" id="showResults" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
-            <div class="p-3 mb-2 bg-default text-white">
+            <div class="p-3 mb-2 bg-neutral text-dark">
                 <div class="modal-header">
                     <h5 class="modal-title text-info">Results</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -86,20 +86,22 @@
                                 {% for results in compare_q %}
                                 <tr>
                                     <td>
-                                        {{ results.0.name }} - {{ results.0.username }} @ {{ results.0.host }} : {{ results.0.port }}
+                                        <p class="text-darker">
+                                        {{ results.0.name }} - {{ results.0.username }} @ {{ results.0.host }} : {{results.0.port }}
                                         ({% if results.0.type == 'oracle' %}
                                         <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
                                         {% else%}
                                         <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
-                                        {%endif %})
+                                        {%endif %})</p>
                                     </td>
                                     <td>
+                                        <p class="text-darker">
                                         {{ results.1.name }} - {{ results.1.username }} @ {{ results.1.host }} : {{ results.1.port }}
                                         ({% if results.1.type == 'oracle' %}
                                         <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
                                         {% else%}
                                         <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
-                                        {%endif %})
+                                        {%endif %})</p>
                                     </td>
                                     <td>
                                         <a href="{% url 'dbs:compare_db_results' id1=results.0.id id2=results.1.id %}" >
@@ -113,7 +115,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

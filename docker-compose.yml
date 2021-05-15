@@ -1,7 +1,17 @@
 version: '3.6'
 services:
-  postgres:
+  redis-server:
+    image: redis:latest
+    restart: always
+    container_name: redis_for_diablo
+    ports:
+      - 127.0.0.1:6379:6379
+    depends_on:
+      - diablo
+  diablo:
     image: postgres:12.3
+    restart: always
+    container_name: Diablo
     environment:
       POSTGRES_PASSWORD: diablo
       POSTGRES_USER: diablo

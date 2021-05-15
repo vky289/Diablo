@@ -2,7 +2,7 @@ import logging
 
 from utils.enums import DbType
 from utils.script_scrapper import scrapper
-from app.dbs.models import DBTableCompare, DBTableColumnCompare
+from app.dbs.models import DBTableCompare, DBCompare, DBTableColumnCompare
 from utils.queries import O_ROW_COUNT, P_ROW_COUNT, O_COLUMN_NAMES, P_COLUMN_NAMES
 
 
@@ -13,6 +13,15 @@ class any_db:
         self.dst_db = dst_db
         self.src_db_type = self.src_db.type
         self.dst_db_type = self.dst_db.type
+        try:
+            ob = DBCompare.objects.get(src_db=self.src_db, dst_db=self.dst_db)
+            self.compare_db = ob
+        except DBCompare.DoesNotExist:
+            ob = DBCompare()
+            ob.src_db = self.src_db
+            ob.dst_db = self.dst_db
+            ob.save()
+            self.compare_db = ob
 
     @staticmethod
     def get_it_rows(set_of_values):
@@ -35,20 +44,27 @@ class any_db:
                     fin_set.add(s_o_v[0])
                     if not fin_dict.get(s_o_v[0]):
                         fin_dict[s_o_v[0]] = []
-                    fin_dict[s_o_v[0]] += [{'column_name' : s_o_v[1], 'data_type': s_o_v[2]}]
+                    fin_dict[s_o_v[0]] += [{'column_name' : s_o_v[1], 'data_type': s_o_v[2], 'precision': s_o_v[3]}]
         return sorted(fin_set), fin_dict
 
-    def store_in_db_columns(self, dict2, DbType):
+    def store_in_db_columns(self, dict2, dbType):
         for o_r in dict2:
             l_c_list = dict2.get(o_r)
             for l_c in l_c_list:
                 obj = DBTableColumnCompare()
                 obj.table_name = o_r
-                obj.src_db = self.src_db
-                obj.dst_db = self.dst_db
-                obj.type = DbType
+                obj.compare_dbs = self.compare_db
+                obj.type = dbType
                 obj.column_name = l_c.get('column_name')
+                if l_c.get('column_name') == 'GEOM':
+                    try:
+                        oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
+                        oob.geom = True
+                        oob.save()
+                    except DBTableCompare.DoesNotExist:
+                        pass
                 obj.datatype = l_c.get('data_type')
+                obj.precision = l_c.get('precision')
                 obj.save()
 
     def c_db(self):
@@ -63,20 +79,20 @@ class any_db:
         p_set, p_dict = self.get_it_rows(p_result)
 
         if o_set is not None or p_set is not None:
-            obj1 = DBTableCompare.objects.filter(src_db=self.src_db, dst_db=self.dst_db)
+            obj1 = DBTableCompare.objects.filter(compare_dbs=self.compare_db)
             obj1.delete()
 
         for o_r in o_set:
             obj = DBTableCompare()
             obj.table_name = o_r
-            obj.src_db = self.src_db
-            obj.dst_db = self.dst_db
+            obj.compare_dbs = self.compare_db
             obj.src_row_count = o_dict.get(o_r)
             obj.dst_row_count = p_dict.get(o_r)
+            obj.geom = False
             obj.save()
 
     def cdata_db(self):
-        obj1 = DBTableColumnCompare.objects.filter(src_db=self.src_db, dst_db=self.dst_db)
+        obj1 = DBTableColumnCompare.objects.filter(compare_dbs=self.compare_db)
         obj1.delete()
 
         o_result1, o_col_names1 = scrapper(db_type=self.src_db_type,

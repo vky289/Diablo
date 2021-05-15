@@ -2,6 +2,7 @@ import logging
 from utils.script_scrapper import scrapper
 from utils.queries import O_RET_TABLE_ROW_QUERY, O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q
 from django_rq import job
+from app.dbs.models import DBStats, DBCompare
 
 
 class xerox:
@@ -17,6 +18,15 @@ class xerox:
         self.commit_each = commit_each
         self.src_schema_name = self.src_db.username
         self.dst_schema_name = self.dst_db.username
+        try:
+            ob = DBCompare.objects.get(src_db=self.src_db, dst_db=self.dst_db)
+            self.compare_db = ob
+        except DBCompare.DoesNotExist:
+            ob = DBCompare()
+            ob.src_db = self.src_db
+            ob.dst_db = self.dst_db
+            ob.save()
+            self.compare_db = ob
 
 
     def get_primary_key(self):
@@ -29,8 +39,24 @@ class xerox:
 
     @job
     def insert_rows(self, data, col_names, commit_each=False):
-        scrapper(db_type=self.dst_db_type,
-                 main_db=self.dst_db).insert_row(self.table_name, data, col_names, self.table_row_count, commit_each=commit_each)
+        cur_cont, err_rec = scrapper(db_type=self.dst_db_type,
+                                     main_db=self.dst_db).insert_row(self.table_name,
+                                                                     data, col_names,
+                                                                     self.table_row_count,
+                                                                     commit_each=commit_each)
+        try:
+            obj = DBStats.objects.get(compare_dbs=self.compare_db, table_name=self.table_name)
+            obj.total_rows_inserted += cur_cont
+            obj.total_rows_errors += err_rec
+            obj.save()
+        except DBStats.DoesNotExist:
+            obj = DBStats()
+            obj.table_name = self.table_name
+            obj.compare_dbs = self.compare_db
+            obj.total_rows_inserted = cur_cont
+            obj.total_rows_errors = err_rec
+            obj.save()
+
 
     def execute_it(self):
         pk_col = self.get_primary_key()
