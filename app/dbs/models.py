@@ -21,6 +21,13 @@ class DBInstance(models.Model):
 
     class Meta:
         ordering = ('host', 'name', 'sid', 'service')
+        permissions = [
+            ('can_disable_triggers', 'User can disable triggers'),
+            ('can_enable_triggers', 'User can enable triggers'),
+            ('can_bulk_import', 'User can do bulk import'),
+            ('can_copy_table_content', 'User can do table copy'),
+            ('can_truncate_table_content', 'User can truncate table content'),
+        ]
 
 
 class DBCompare(models.Model):
@@ -31,6 +38,11 @@ class DBCompare(models.Model):
 
     def __str__(self):
         return self.src_db.name + "-" + self.dst_db.name
+
+    class Meta:
+        permissions = [
+            ('can_compare_db', 'User can compare DB instance'),
+        ]
 
 
 class DBTableCompare(models.Model):

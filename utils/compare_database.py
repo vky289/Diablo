@@ -22,6 +22,9 @@ class any_db:
             ob.dst_db = self.dst_db
             ob.save()
             self.compare_db = ob
+        except DBCompare.MultipleObjectsReturned:
+            DBCompare.objects.filter(src_db=self.src_db, dst_db=self.dst_db).delete()
+
 
     @staticmethod
     def get_it_rows(set_of_values):

@@ -13,13 +13,8 @@ from utils.truncate_table import delete
 from utils.copy_table import xerox
 from utils.enable_disable_triggers import triggers
 
-@staticmethod
-def save_db_instance_object(obj, request):
 
-    return obj
-
-
-add_instance = 'dbs.add_dbinstance'
+add_instance = 'dbs.view_dbinstance'
 
 
 class DbInstanceDetailView(PermissionRequiredMixin, ListView):
@@ -36,17 +31,20 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
 
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
-            obj = DBInstance()
-            obj.host = request.POST.get('host')
-            obj.name = request.POST.get('name')
-            obj.port = request.POST.get('port')
-            obj.username = request.POST.get('username')
-            obj.password = request.POST.get('password')
-            obj.sid = request.POST.get('sid')
-            obj.service = request.POST.get('service')
-            obj.type = request.POST.get('type')
-            obj.save()
-            messages.info(request, f'DB Connections Successfully saved!')
+            if request.user.has_perm('dbs.add_dbinstance') or request.user.has_perm('dbs.change_dbinstance'):
+                obj = DBInstance()
+                obj.host = request.POST.get('host')
+                obj.name = request.POST.get('name')
+                obj.port = request.POST.get('port')
+                obj.username = request.POST.get('username')
+                obj.password = request.POST.get('password')
+                obj.sid = request.POST.get('sid')
+                obj.service = request.POST.get('service')
+                obj.type = request.POST.get('type')
+                obj.save()
+                messages.info(request, f'DB Connections Successfully saved!')
+            else:
+                messages.info(request, 'User doesn\'t have permission to add/modify DB details!!')
             return HttpResponseRedirect(reverse('dbs:db_details'))
 
 
@@ -93,7 +91,7 @@ class DbInstanceEditView(PermissionRequiredMixin, ListView):
 
 
 class DbCompareDetailView(PermissionRequiredMixin, ListView):
-    permission_required = add_instance
+    permission_required = 'dbs.view_dbcompare'
     model = DBInstance
     template_name = 'compare-db.html'
 
@@ -116,7 +114,7 @@ class DbCompareDetailView(PermissionRequiredMixin, ListView):
 
 
 class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
-    permission_required = add_instance
+    permission_required = 'dbs.view_dbtablecolumncompare'
     model = DBTableColumnCompare
     template_name = 'compare-data-type.html'
 
@@ -195,52 +193,70 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
             except:
                 pass
             if self.request.POST.get('compare'):
-                src_id = self.request.POST.get('src_db')
-                dst_id = self.request.POST.get('dst_db')
-                if src_id is None or dst_id is None:
-                    messages.error(request, "Make sure to select source and destination DB!")
-                    return HttpResponseRedirect(reverse('dbs:compare_db'))
-                if src_id is not None and dst_id is not None and src_id == dst_id:
-                    messages.error(request, "Cannot compare same DB!")
-                    return HttpResponseRedirect(reverse('dbs:compare_db'))
-                src_db = DBInstance.objects.get(id=src_id)
-                dst_db = DBInstance.objects.get(id=dst_id)
-                compare_db_rows.delay(src_db, dst_db)
-                compare_db_data_types.delay(src_db, dst_db)
-                # any_db(src_db, dst_db).c_db()
-                # any_db(src_db, dst_db).cdata_db()
-                messages.info(request, f'DB table row comparisons started!')
+                if request.user.has_perm('dbs.can_compare_db'):
+                    src_id = self.request.POST.get('src_db')
+                    dst_id = self.request.POST.get('dst_db')
+                    if src_id is None or dst_id is None:
+                        messages.error(request, "Make sure to select source and destination DB!")
+                        return HttpResponseRedirect(reverse('dbs:compare_db'))
+                    if src_id is not None and dst_id is not None and src_id == dst_id:
+                        messages.error(request, "Cannot compare same DB!")
+                        return HttpResponseRedirect(reverse('dbs:compare_db'))
+                    src_db = DBInstance.objects.get(id=src_id)
+                    dst_db = DBInstance.objects.get(id=dst_id)
+                    compare_db_rows.delay(src_db, dst_db)
+                    compare_db_data_types.delay(src_db, dst_db)
+                    # any_db(src_db, dst_db).c_db()
+                    # any_db(src_db, dst_db).cdata_db()
+                    messages.info(request, f'DB table row comparisons started!')
+                else:
+                    messages.info(request, 'Permission required to compare DB!!')
             if self.request.POST.get('truncate'):
-                table_name = self.kwargs['table_name']
-                dst_db = DBInstance.objects.get(id=dst_id)
-                truncate_table.delay(dst_db, table_name)
-                # delete(dst_db=dst_db).execute_it(table_name)
-                messages.info(request, 'Truncate initiated for the DB table {}'.format(table_name))
+                if request.user.has_perm('dbs.can_truncate_table_content'):
+                    table_name = self.kwargs['table_name']
+                    dst_db = DBInstance.objects.get(id=dst_id)
+                    truncate_table.delay(dst_db, table_name)
+                    # delete(dst_db=dst_db).execute_it(table_name)
+                    messages.info(request, 'Truncate initiated for the DB table {}'.format(table_name))
+                else:
+                    messages.info(request, 'Truncate permission required!!')
             if self.request.POST.get('copy'):
-                row_count = self.kwargs['row_count']
-                table_name = self.kwargs['table_name']
-                batch_size = 100000
-                for upper_bound in range(0, int(row_count), batch_size):
-                    copy_table_content.delay(src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
-                    # xerox(src_db=src_db, dst_db=dst_db, table_name=table_name,
-                    #       table_row_count=row_count, upper_bound=upper_bound, commit_each=True).execute_it()
-                messages.info(request, 'Copy initiated for the DB table {}'.format(table_name))
-            if self.request.POST.get('bulkCopy'):
-                bulk_tables = request.POST.getlist('bulkTables')
-                for each_table in bulk_tables:
-                    val_rows = each_table.split('(')
-                    table_name = val_rows[0]
-                    row_count = val_rows[1][0:len(val_rows[1])-1]
+                if request.user.has_perm('dbs.can_copy_table_content'):
+                    row_count = self.kwargs['row_count']
+                    table_name = self.kwargs['table_name']
                     batch_size = 100000
                     for upper_bound in range(0, int(row_count), batch_size):
                         copy_table_content.delay(src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
-                messages.info(request, 'Bulk copy initiated!')
+                        # xerox(src_db=src_db, dst_db=dst_db, table_name=table_name,
+                        #       table_row_count=row_count, upper_bound=upper_bound, commit_each=True).execute_it()
+                    messages.info(request, 'Copy initiated for the DB table {}'.format(table_name))
+                else:
+                    messages.info(request, 'Copy permission required!!')
+            if self.request.POST.get('bulkCopy'):
+                if request.user.has_perm('dbs.can_bulk_import'):
+                    bulk_tables = request.POST.getlist('bulkTables')
+                    for each_table in bulk_tables:
+                        val_rows = each_table.split('(')
+                        table_name = val_rows[0]
+                        row_count = val_rows[1][0:len(val_rows[1])-1]
+                        batch_size = 100000
+                        for upper_bound in range(0, int(row_count), batch_size):
+                            copy_table_content.delay(src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
+                    messages.info(request, 'Bulk copy initiated!')
+                else:
+                    messages.info(request, 'Bulk copy permission required!!')
             if self.request.POST.get('disableTrigger'):
-                triggers(dst_db).execute_it(ty='DISABLE')
-                messages.info(request, 'All the triggers are disabled!')
+                if request.user.has_perm('dbs.can_disable_triggers'):
+                    triggers(dst_db).execute_it(ty='DISABLE')
+                    messages.info(request, 'All the triggers are disabled!')
+                else:
+                    messages.info(request, 'Disable Trigger permission required!!')
             if self.request.POST.get('enableTrigger'):
-                triggers(dst_db).execute_it(ty='ENABLE')
-                messages.error(request, 'All the triggers are enabled!')
+                if request.user.has_perm('dbs.can_enable_triggers'):
+                    triggers(dst_db).execute_it(ty='ENABLE')
+                    messages.error(request, 'All the triggers are enabled!')
+                else:
+                    messages.info(request, 'Enable Trigger permission required!!')
 
         return HttpResponseRedirect(reverse('dbs:compare_db_results', kwargs={'id1': src_id, 'id2': dst_id}))
         #return HttpResponseRedirect(reverse('dbs:compare_db_res'))
