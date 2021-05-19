@@ -7,8 +7,24 @@
 {% endblock stylesheets %}
 
 {% block content %}
-<div id="jobsExecuted" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-<div id="graphTableProcessed" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<div class="card">
+    <div class="card-body">
+        <div class="row mw-100">
+                <div class="col-xl float-xl-left">
+                    <div id="jobsExecuted" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+                </div>
+                <div class="col-xl float-xl-right">
+                    <div id="graphTableProcessed" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+                </div>
+        </div>
+        <div class="row mw-100">
+            <div class="col-xl float-xl-left">
+                <div id="postRequest" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 {% endblock content %}
 
@@ -23,10 +39,10 @@
            type: 'line'
          },
          title: {
-           text: 'Total DB Comparison'
+           text: 'DB Comparison'
          },
         xAxis: {
-           categories: [ {% for entry in dataset %}'{{ entry.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}]
+           categories: [ {% for entry in data_compared_req %}'{{ entry.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}]
         },
          yAxis: {
            min: 0,
@@ -51,8 +67,8 @@
              }
          },
         series: [{
-          name: 'Compared',
-          data: [{% for entry in dataset %}{{ entry.compared }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+          name: 'DB compared',
+          data: [{% for entry in data_compared_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
         color: 'skyblue'
         }]
        });
@@ -61,11 +77,11 @@
                  type: 'column'
              },
              title: {
-                 text: 'Tables Copied'
+                 text: 'Copied'
              },
              xAxis: {
                  categories: [{% for entry in rows_insert %}'{{ entry.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}]
-  },
+        },
       yAxis: {
           min: 0,
               title: {
@@ -89,10 +105,54 @@
           }
       },
       series: [{
-          name: 'Tables',
-          data: [{% for entry in rows_insert %}{{ entry.table_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+          name: 'Tables Copied',
+          data: [{% for entry in rows_insert %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
       color: 'lightgreen'
   }]
   });
-  });</script>
+      $('#postRequest').highcharts({
+           chart: {
+               type: 'line'
+           },
+           title: {
+               text: 'Requests'
+           },
+           xAxis: {
+               categories: [{% for entry in post_req %}'{{ entry.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}]
+        },
+      yAxis: {
+          min: 0,
+              title: {
+              text: 'hits'
+          }
+      },
+      tooltip: {
+          headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+              pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                           '<td style="padding:0"><b>{point.y}</b></td></tr>',
+              footerFormat: '</table>',
+              shared: true,
+              useHTML: true
+      },
+      plotOptions: {
+          series: {
+              label: {
+                  connectorAllowed: false
+              },
+              pointStart: 0
+          }
+      },
+      series: [{
+          name: 'Total Post',
+          data: [{% for entry in post_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            }, {
+          name: 'Total Access',
+                  data: [{% for entry in get_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+          },{
+              name: '# Data Compared',
+                  data: [{% for entry in data_compared_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+          }]
+  });
+  });
+</script>
 {% endblock javascripts %}

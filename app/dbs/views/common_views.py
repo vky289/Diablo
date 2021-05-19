@@ -4,14 +4,16 @@ from django.contrib import messages
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.utils import timezone
+import time
 
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare
 
 from utils.enums import DbType
+from utils.enable_disable_triggers import triggers
 from utils.compare_database import any_db
 from utils.truncate_table import delete
 from utils.copy_table import xerox
-from utils.enable_disable_triggers import triggers
 
 
 add_instance = 'dbs.view_dbinstance'
@@ -143,7 +145,7 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
                     final_dict['pg_data_type'] = pg.datatype + '(' + pg.precision + ')'
             dd.append(final_dict)
         context['data_type_compare_res'] = dd
-
+        context['segment'] = 'compare-db'
         return context
 
 
@@ -162,6 +164,9 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                 context['db_compare_results'] = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).exclude(
                     src_row_count=None, dst_row_count=None).exclude(src_row_count=None).order_by(
                     '-src_row_count')
+                max_date = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).latest('added_on').added_on
+                parsed_ago = (timezone.now() - max_date)
+                context['last_update'] = f'{parsed_ago.days * 1440 + int(parsed_ago.seconds / 60)} minutes ago'
                 context['db_compare_res_bulk'] = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).exclude(
                     src_row_count=None, dst_row_count=None).exclude(src_row_count=None).exclude(src_row_count=0).order_by(
                     'table_name')
@@ -179,6 +184,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
             context['table_name'] = self.kwargs['table_name']
         except:
             pass
+        context['segment'] = 'compare-db'
         return context
 
     def post(self, request, *args, **kwargs):
@@ -205,12 +211,14 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     src_db = DBInstance.objects.get(id=src_id)
                     dst_db = DBInstance.objects.get(id=dst_id)
                     compare_db_rows.delay(src_db, dst_db)
+                    time.sleep(1)
                     compare_db_data_types.delay(src_db, dst_db)
-                    # any_db(src_db, dst_db).c_db()
-                    # any_db(src_db, dst_db).cdata_db()
+                    #any_db(src_db, dst_db).c_db()
+                    #any_db(src_db, dst_db).cdata_db()
                     messages.info(request, f'DB table row comparisons started!')
                 else:
                     messages.info(request, 'Permission required to compare DB!!')
+                return HttpResponseRedirect(reverse('dbs:compare_dbs', kwargs={'id1': src_id, 'id2': dst_id}))
             if self.request.POST.get('truncate'):
                 if request.user.has_perm('dbs.can_truncate_table_content'):
                     table_name = self.kwargs['table_name']

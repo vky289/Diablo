@@ -58,6 +58,11 @@ class DBTableCompare(models.Model):
     def __str__(self):
         return self.id
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['table_name', 'compare_dbs', 'added_on', ]),
+        ]
+
 
 class DBTableColumnCompare(models.Model):
     id = models.AutoField(primary_key=True)

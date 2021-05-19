@@ -11,6 +11,7 @@ urlpatterns = [
     path('edit/<int:pk>', DbInstanceEditView.as_view(), name='db_edit_details'),
     path('compare/', DbCompareDetailView.as_view(), name='compare_db'),
     path('compare/<int:id1>/<int:id2>/', DbCompareResultView.as_view(), name='compare_db_results'),
+    path('compare/<int:id1>/<int:id2>/compare/', DbCompareResultView.as_view(), name='compare_dbs'),
     path('compare/<int:id1>/<int:id2>/<str:table_name>/', DBCompareDataTypeResultView.as_view(), name='compare_data_types'),
     path('compare/<int:id1>/<int:id2>/<str:table_name>/<int:row_count>', DbCompareResultView.as_view(), name='compare_db_results'),
     path('compare/dbs/', DbCompareResultView.as_view(), name='compare_db_res'),

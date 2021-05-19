@@ -23,7 +23,8 @@ class any_db:
             ob.save()
             self.compare_db = ob
         except DBCompare.MultipleObjectsReturned:
-            DBCompare.objects.filter(src_db=self.src_db, dst_db=self.dst_db).delete()
+            ob = DBCompare.objects.filter(src_db=self.src_db, dst_db=self.dst_db)[:1]
+            self.compare_db = ob
 
 
     @staticmethod
@@ -50,14 +51,14 @@ class any_db:
                     fin_dict[s_o_v[0]] += [{'column_name' : s_o_v[1], 'data_type': s_o_v[2], 'precision': s_o_v[3]}]
         return sorted(fin_set), fin_dict
 
-    def store_in_db_columns(self, dict2, dbType):
+    def store_in_db_columns(self, dict2, db_type):
         for o_r in dict2:
             l_c_list = dict2.get(o_r)
             for l_c in l_c_list:
                 obj = DBTableColumnCompare()
                 obj.table_name = o_r
                 obj.compare_dbs = self.compare_db
-                obj.type = dbType
+                obj.type = db_type
                 obj.column_name = l_c.get('column_name')
                 if l_c.get('column_name') == 'GEOM':
                     try:
@@ -114,3 +115,15 @@ class any_db:
 
         self.store_in_db_columns(p_dict2, DbType.POSTGRES)
 
+        table_com = list(o_dict2.keys()) + list(set(list(p_dict2.keys())) - set(list(o_dict2.keys())))
+
+        self.process_column_mismatch(table_com, o_dict2, p_dict2)
+
+    def process_column_mismatch(self, tabs, o_dict2, p_dict2):
+        for tt in tabs:
+            ora_table = o_dict2.get(tt)
+            pg_table = p_dict2.get(tt)
+            if ora_table is not None and pg_table is not None and len(ora_table) != len(pg_table):
+                oob = DBTableCompare.objects.get(table_name=tt, compare_dbs=self.compare_db)
+                oob.mismatch_in_cols_count = True
+                oob.save()

@@ -15,6 +15,8 @@ from django.urls import reverse
 from app.dbs.models import DBCompare, DBStats
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
+from easyaudit.models import RequestEvent
+from django.db.models import Q
 
 
 redis = Redis(host="localhost", db=0, port= 6379, socket_connect_timeout=10, socket_timeout=10)
@@ -73,35 +75,48 @@ class DjangoRQDetailView(PermissionRequiredMixin, ListView):
                 self.store_job_date(job_q)
         return HttpResponseRedirect(reverse('core:current_rq_queue'))
 
-@login_required(login_url="/login/")
-def index(request):
+
+def rep_make_result_set(dataset):
     month_list = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    dataset = DBCompare.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
-    dataset2 = DBStats.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
     ss = {}
     for dd in dataset:
         ss[dd.get('month').strftime("%b")] = dd.get('c')
-    ss2 = {}
-    for dd in dataset2:
-        ss2[dd.get('month').strftime("%b")] = dd.get('c')
-
-    context = {}
-    context['segment'] = 'home'
     final_dataset = []
-    final_dataset2 = []
     for m_l in month_list:
         if ss.get(m_l) is None:
-            final_dataset.append({'month': m_l, 'compared': 0})
+            final_dataset.append({'month': m_l, 'y': 0})
         else:
-            final_dataset.append({'month': m_l, 'compared': ss.get(m_l)})
-    for m_l in month_list:
-        if ss2.get(m_l) is None:
-            final_dataset2.append({'month': m_l, 'table_count': 0})
-        else:
-            final_dataset2.append({'month': m_l, 'table_count': ss2.get(m_l)})
+            final_dataset.append({'month': m_l, 'y': ss.get(m_l)})
+    return final_dataset
 
-    context['dataset'] = final_dataset
-    context['rows_insert'] = final_dataset2
+
+@login_required(login_url="/login/")
+def index(request):
+    context = {}
+    context['segment'] = 'home'
+
+    dbs = DBCompare.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
+    tabs = DBStats.objects.annotate(month=TruncMonth('added_on')).values('month').annotate(c=Count('id')).values('month', 'c')
+    post_data_request = RequestEvent.objects.filter(Q(method='POST')).annotate(month=TruncMonth('datetime')).values('month').annotate(c=Count(
+        'month')).values('month', 'c').order_by()
+    get_data_request = RequestEvent.objects.filter(Q(method='GET')).annotate(month=TruncMonth('datetime')).values('month').annotate(c=Count(
+        'month')).values('month', 'c').order_by()
+    data_compared = RequestEvent.objects.filter(Q(method='POST') & Q(url__contains='/dbs/compare/')).annotate(month=TruncMonth(
+        'datetime')).values(
+        'month').annotate(c=Count('month')).values('month', 'c').order_by()
+
+    db_compared = rep_make_result_set(dbs)
+    tables_compared = rep_make_result_set(tabs)
+    post_req = rep_make_result_set(post_data_request)
+    get_req = rep_make_result_set(get_data_request)
+    data_compared_req = rep_make_result_set(data_compared)
+
+    context['dataset'] = db_compared
+    context['rows_insert'] = tables_compared
+    context['post_req'] = post_req
+    context['get_req'] = get_req
+    context['data_compared_req'] = data_compared_req
+
     html_template = loader.get_template( 'index.html' )
     return HttpResponse(html_template.render(context, request))
 
