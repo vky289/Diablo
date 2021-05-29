@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.template import loader
 from django.http import HttpResponse
 from django import template
-from django.views.generic import RedirectView, DetailView, TemplateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.views.generic import ListView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from redis import Redis
 from rq import Queue
 from rq.registry import FinishedJobRegistry, StartedJobRegistry
@@ -17,9 +17,11 @@ from django.db.models.functions import TruncMonth
 from django.db.models import Count
 from easyaudit.models import RequestEvent
 from django.db.models import Q
+from notifications.models import Notification
+from notifications.views import NotificationViewList
+from django.shortcuts import get_object_or_404
 
-
-redis = Redis(host="localhost", db=0, port= 6379, socket_connect_timeout=10, socket_timeout=10)
+redis = Redis(host="localhost", db=0, port=6379, socket_connect_timeout=10, socket_timeout=10)
 
 
 class DjangoRQDetailView(PermissionRequiredMixin, ListView):
@@ -143,3 +145,43 @@ def pages(request):
 
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
+
+
+class NotificationDetailsView(PermissionRequiredMixin, NotificationViewList):
+    permission_required = 'dbs.view_dbinstance'
+    model = Notification
+    template_name = 'notifications-zone.html'
+    success = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['notifications'] = Notification.objects.filter(recipient=self.request.user).active()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if self.request.method == 'POST':
+            checks = self.request.POST.getlist('checks[]')
+            if self.request.POST.get('mark_as_read'):
+                for cc in checks:
+                    notif = get_object_or_404(
+                            Notification, recipient=request.user, id=cc)
+                    notif.mark_as_read()
+            if self.request.POST.get('mark_all_read'):
+                checks = Notification.objects.filter(recipient=request.user).all()
+                for cc in checks:
+                    notif = get_object_or_404(
+                        Notification, recipient=request.user, id=cc.id)
+                    notif.mark_as_read()
+            if self.request.POST.get('mark_as_unread'):
+                for cc in checks:
+                    notif = get_object_or_404(
+                        Notification, recipient=request.user, id=cc)
+                    notif.mark_as_unread()
+            if self.request.POST.get('delete'):
+                for cc in checks:
+                    notif = get_object_or_404(
+                        Notification, recipient=request.user, id=cc)
+                    notif.deleted = True
+            if self.request.POST.get('delete_all'):
+                Notification.objects.filter(recipient=request.user).mark_all_as_deleted()
+        return HttpResponseRedirect(reverse('core:notifications'))

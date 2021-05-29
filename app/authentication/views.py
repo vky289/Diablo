@@ -1,9 +1,3 @@
-# -*- encoding: utf-8 -*-
-
-
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -85,9 +79,3 @@ def profile_user(request):
                 messages.info(request, 'User Doesnt found')
 
     return render(request, "page-user.html", {"form": form, "success": success})
-
-
-def notifications(request):
-    success = False
-
-    return render(request, "ui-notifications.html", {"success": success, "segment": "notifications"})

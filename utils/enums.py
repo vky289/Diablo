@@ -11,3 +11,10 @@ def dont_call_in_template(cls):
 class DbType(models.TextChoices):
     ORACLE = 'oracle', _('oracle')
     POSTGRES = 'postgres', _('postgres')
+
+
+@dont_call_in_template
+class DBObject(models.TextChoices):
+    VIEW = 'view', _('view')
+    SEQUENCE = 'sequence', _('sequence')
+    TRIGGER = 'trigger', _('trigger')

@@ -10,12 +10,12 @@ O_DIS_TRIG_Q = '''ALTER TABLE :TAB DISABLE TRIGGER ALL'''
 P_DIS_TRIG_Q = '''ALTER TABLE %s DISABLE TRIGGER ALL'''
 O_TRUNC_Q = '''TRUNCATE TABLE :TAB'''
 P_TRUNC_Q = '''TRUNCATE TABLE %s'''
-O_SEQ_SCRIPT_Q = "SELECT SEQUENCE_NAME FROM ALL_SEQUENCES where SEQUENCE_NAME LIKE 'S_%' AND  SEQUENCE_OWNER = :SCHEMA"
-P_SEQ_SCRIPT_Q = "select UPPER(sequence_name) from INFORMATION_SCHEMA.sequences where sequence_schema = %(SCHEMA)s"
+O_SEQ_SCRIPT_Q = "SELECT SEQUENCE_NAME FROM ALL_SEQUENCES where SEQUENCE_NAME LIKE 'S_%' AND  SEQUENCE_OWNER = :SCH"
+P_SEQ_SCRIPT_Q = "select UPPER(sequence_name) from INFORMATION_SCHEMA.sequences where sequence_schema = $SCHEMA"
 O_ALL_TAB_SCRIPT_Q = "SELECT UPPER(table_name) as table_name FROM ALL_TABLES WHERE OWNER = :SCH"
 P_ALL_TAB_SCRIPT_Q = "SELECT UPPER(table_name) as table_name FROM information_schema.tables WHERE table_schema= %(SCH)s"
-O_VW_SCRIPT_Q = "select view_name from all_views where OWNER = :SCHEMA"
-P_VW_SCRIPT_Q = "select UPPER(table_name) from INFORMATION_SCHEMA.views WHERE table_schema= %(SCHEMA)s"
+O_VW_SCRIPT_Q = "select view_name from all_views where OWNER = :SCH"
+P_VW_SCRIPT_Q = "select UPPER(table_name) from INFORMATION_SCHEMA.views WHERE table_schema= $SCHEMA"
 O_TRIG_SCRIPT_Q = "select trigger_name from all_triggers where OWNER = :SCHEMA"
 P_TRIG_SCRIPT_Q = "select upper(trigger_name) from information_schema.triggers where event_object_schema = %(SCHEMA)s group by 1"
 O_PRO_SCRIPT_Q = "SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OBJECT_TYPE IN ('FUNCTION','PROCEDURE') AND OWNER = :SCHEMA"

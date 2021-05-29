@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from utils.enums import DbType
+from utils.enums import DbType, DBObject
 
 
 class DBInstance(models.Model):
@@ -43,6 +43,9 @@ class DBCompare(models.Model):
         permissions = [
             ('can_compare_db', 'User can compare DB instance'),
         ]
+        indexes = [
+            models.Index(fields=['src_db', 'dst_db']),
+        ]
 
 
 class DBTableCompare(models.Model):
@@ -76,6 +79,24 @@ class DBTableColumnCompare(models.Model):
 
     def __str__(self):
         return self.id
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['table_name', 'compare_dbs', 'column_name', 'added_on', ]),
+        ]
+
+
+class DBObjectCompare(models.Model):
+    id = models.AutoField(primary_key=True)
+    table_name = models.CharField(max_length=400, blank=False)
+    compare_dbs = models.ForeignKey(DBCompare, on_delete=models.CASCADE, related_name='s3_db_d3_db')
+    src_exists = models.BooleanField(default=False, null=True)
+    dst_exists = models.BooleanField(default=False, null=True)
+    type = models.CharField(max_length=100, choices=DBObject.choices)
+    added_on = models.DateTimeField(auto_now_add=True, blank=True)
+
+    class Meta:
+        ordering = ('table_name', )
 
 
 class DBStats(models.Model):

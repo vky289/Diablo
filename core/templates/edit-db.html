@@ -1,80 +1,63 @@
-{% extends 'layouts/base.html' %}
 
-{% block title %} Page Blank {% endblock %} 
-
-<!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
-
-{% block content %}
-
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="title">Edit Details</h5>
-                </div>
-                <div class="card-body">
-                    <form action="#" method="post">
+<div class="card">
+    <div class="card-header">
+        <h5 class="title">Edit Details</h5>
+    </div>
+    <div class="card-body">
+        <form action="#" method="post">
+            <div class="form-group">
+                {% csrf_token %}
+                <div class="row justify-content-center w-100">
+                    <div class="col w-100">
                         <div class="form-group">
-                            {% csrf_token %}
-                            <div class="row justify-content-center w-100">
-                                <div class="col w-100">
-                                    <div class="form-group">
-                                        <label class="col-mod-4">ID</label>
-                                        <input type="text" name="id" class="form-control" value="{{ db_instance.id }}" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Name</label>
-                                        <input type="text" name="name" class="form-control" value="{{ db_instance.name }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Host</label>
-                                        <input type="text" name="host" class="form-control" value="{{ db_instance.host }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Port</label>
-                                        <input type="number" name="port" class="form-control" value="{{ db_instance.port }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Username</label>
-                                        <input type="text" name="username" class="form-control" value="{{ db_instance.username }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Password</label>
-                                        <input type="text" name="password" class="form-control" value="{{ db_instance.password }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">SID</label>
-                                        <input type="text" name="sid" class="form-control" value="{{ db_instance.sid }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4">Service</label>
-                                        <input type="text" name="service" class="form-control" value="{{ db_instance.service }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-mod-4" for="inlineFormCustomSelect">Type</label>
-                                        <select name="type" id="inlineFormCustomSelect">
-                                            {% for db in db_types %}
-                                            {% if db_instance.type == db %}
-                                                <option value="{{ db.value }}" selected>{{ db.value }}</option>
-                                            {% else %}}
-                                                <option value="{{ db.value }}">{{ db.value }}</option>
-                                            {% endif %}
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
+                            <label class="col-mod-4">ID</label>
+                            <input type="text" name="id" class="form-control" value="{{ db_instance.id }}" readonly>
                         </div>
-                        <button class="btn btn-info" type="submit" name="save" value="save">Save</button>
-                        <button class="btn btn-danger" type="submit" name="delete" value="delete">Delete</button>
-                    </form>
+                        <div class="form-group">
+                            <label class="col-mod-4">Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ db_instance.name }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">Host</label>
+                            <input type="text" name="host" class="form-control" value="{{ db_instance.host }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">Port</label>
+                            <input type="number" name="port" class="form-control" value="{{ db_instance.port }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">Username</label>
+                            <input type="text" name="username" class="form-control" value="{{ db_instance.username }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">Password</label>
+                            <input type="text" name="password" class="form-control" value="{{ db_instance.password }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">SID</label>
+                            <input type="text" name="sid" class="form-control" value="{{ db_instance.sid }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">Service</label>
+                            <input type="text" name="service" class="form-control" value="{{ db_instance.service }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4" for="inlineFormCustomSelect">Type</label>
+                            <select name="type" id="inlineFormCustomSelect">
+                                {% for db in db_types %}
+                                {% if db_instance.type == db %}
+                                    <option value="{{ db.value }}" selected>{{ db.value }}</option>
+                                {% else %}}
+                                    <option value="{{ db.value }}">{{ db.value }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+            <button class="btn btn-info" type="submit" name="editDB" value="editDB">Save</button>
+            <button class="btn btn-danger" type="submit" name="delete" value="delete">Delete</button>
+        </form>
     </div>
-    
-{% endblock content %}
-
-<!-- Specific Page JS goes HERE  -->
-{% block javascripts %}{% endblock javascripts %}
+</div>

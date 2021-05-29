@@ -1,0 +1,85 @@
+{% extends 'layouts/base.html' %}
+{% load timetags%}
+{% block title %} UI Notifications {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <form action="{% url 'core:notifications' %}" method="post">
+        {% csrf_token %}
+        <div class="card-header">
+          <h4 class="card-title">Notifications</h4>
+          {% if notifications %}
+            <p class="float-left">
+              <button type="submit" class="btn btn-simple" name="mark_as_read" value="mark_as_read"
+                      title="Mark as Read"><i class="fa fa-check"></i></button>
+              <button type="submit" class="btn btn-simple" name="mark_all_read" value="mark_all_read" title="Mark all Read"><i
+                      class="fa fa-check"></i><i
+                      class="fa fa-check"></i></button>
+              <button type="submit" class="btn btn-simple" name="mark_as_unread" value="mark_as_unread"
+                      Title="Mark as Unread"><i class="fa fa-asterisk"></i></button>
+              <p class="float-right">
+                <button type="submit" class="btn btn-simple btn-outline-danger" name="delete" value="delete" title="Delete"><i
+                        class="fa fa-trash"></i></button>
+                <button type="submit" class="btn btn-simple btn-outline-danger" name="delete_all" value="delete_all"title="Delete All"><i
+                        class="fa fa-trash"></i><i class="fa fa-trash"></i></button>
+              </p>
+            </p>
+          {% endif %}
+        </div>
+        <div class="card-body mw-100">
+          {% if notifications %}
+          <table class="table">
+              <tr>
+                <th class="cols"></th>
+                <th class="cols"><input class="form-check-input" type="checkbox" value="select_all" id="select_all"
+                                        onclick="eventCheckBox()">Message</th>
+                <th class="cols">Received</th>
+              </tr>
+              <div class="bg-dark">
+                {% for notif in notifications %}
+                {% if notif.deleted == False %}
+                  {% if notif.unread %}
+                    <tr class="bg-light text-darker">
+                    {% else %}
+                      <tr class="bg-dark">
+                    {% endif %}
+                  {% else %}
+                <tr class="bg-danger">
+                  {% endif %}
+                  <th scope="row"></th>
+                  <td class="text-danger"><input class="form-check-input" name="checks[]" type="checkbox" value="{{ notif.id }}"
+                             id="flexCheckNotification-{{ notif.id }}">
+                    <label class="form-check-label" for="flexCheckNotification-{{ notif.id }}">{{ notif.verb }}</label></td>
+                  <td>{{ notif.timestamp|print_timestamp }}</td>
+                </tr>
+                {% endfor %}
+              </div>
+          </table>
+          {% else %}
+          <p>Inbox empty</p>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script type="text/javascript">
+  function eventCheckBox() {
+    let checkboxs = document.getElementsByTagName("input");
+    for(let i = 0; i < checkboxs.length ; i++) { //zero-based array
+      checkboxs[i].checked = !checkboxs[i].checked;
+    }
+  }
+</script>
+{% endblock javascripts %}

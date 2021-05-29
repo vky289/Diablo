@@ -30,11 +30,10 @@
           {% for db_in in dbinstance_list %}
           <tr>
             <td>
-              <a href="{% url 'dbs:db_edit_details' db_in.id %}">
-                <button type="button" class="btn btn-outline-danger" name="{{ db_in.id }}">
-                  {{ db_in.name }}
-                </button>
-              </a>
+                <button type="button" class="btn btn-social btn-outline-danger"
+                        data-toggle="modal"
+                        data-remote="{% url 'dbs:db_edit_details' db_in.id%}"
+                        data-target="#dbDetailsModal">{{ db_in.name }}</button>
             </td>
             <td>{{ db_in.host }}</td>
             <td>{{ db_in.port }}</td>
@@ -55,11 +54,7 @@
               {% endif %}
             </td>
             <td>
-              {% if db_in.type == 'oracle' %}
-              <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
-              {% else%}
-              <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
-              {%endif %}
+              <img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">
             </td>
           </tr>
           {% endfor %}
@@ -124,10 +119,32 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-info">Save changes</button>
+          <button type="submit" name="saveDB" value="saveDB" class="btn btn-info">Save changes</button>
           <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
         </div>
       </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Model -->
+<div class="modal fade" id="dbDetailsModal" tabindex="-1"
+     role="dialog" aria-labelledby="" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="p-3 mb-2 bg-neutral text-black-50">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"
+                  aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <i class="tim-icons icon-atom" aria-label="loading"></i>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -138,6 +155,9 @@
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
 <script type="text/javascript">
+  $('body').on('click', '[data-toggle="modal"]', function(){
+    $($(this).data("target")+' .modal-body').load($(this).data("remote"));
+  });
   $(document).ready(function(){
 
     $('.btn-outline-danger').click(function(){
