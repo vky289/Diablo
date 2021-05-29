@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %}
+{% load timetags%}
 {% load static %}
 
 {% block title %} {% endblock %}
@@ -46,7 +47,7 @@
                         </p>
                     </div>
                     {% if last_update is not None %}
-                    <p class="float-right"> <h4><b>Last Compared: {{ last_update }}</b></h4></p>
+                    <p class="float-right"> <h4><b>Last Compared: {{ last_update|print_timestamp }}</b></h4></p>
                     {% endif %}
                     <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
                         <a href="{% url 'dbs:compare_db_results' id1 id2 %}">

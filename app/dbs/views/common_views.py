@@ -8,7 +8,6 @@ from django.utils import timezone
 from django_rq import get_queue
 
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBObjectCompare
-
 from utils.enums import DbType, DBObject
 from utils.enable_disable_triggers import triggers
 from utils.compare_database import any_db
@@ -168,9 +167,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     'table_name')
                 db_compare_entry = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id)
                 if len(db_compare_entry) > 0:
-                    max_date = db_compare_entry.latest('added_on').added_on
-                    parsed_ago = (timezone.now() - max_date)
-                    context['last_update'] = f'{parsed_ago.days * 1440 + int(parsed_ago.seconds / 60)} minutes ago'
+                    context['last_update'] = db_compare_entry.latest('added_on').added_on
                 context['db_compare_res_bulk'] = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).exclude(
                     src_row_count=None, dst_row_count=None).exclude(src_row_count=None).exclude(src_row_count=0).order_by(
                     'table_name')
