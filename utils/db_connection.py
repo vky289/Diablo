@@ -22,7 +22,6 @@ class postgres_db:
 
 
 class oracle_db:
-    cx_Oracle.init_oracle_client(lib_dir='/opt/oracle/instantclient_21_1')
 
     def __init__(self, args1):
         self.conn = None
