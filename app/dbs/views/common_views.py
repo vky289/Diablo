@@ -221,10 +221,11 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                         compare_db.dst_db = dst_db
                         compare_db.save()
 
-                    queue = get_queue('default')
+                    queue = get_queue('high')
                     row_compare = queue.enqueue(compare_db_rows, args=(request.user, src_db, dst_db, compare_db))
                     queue.enqueue(compare_db_data_types, args=(request.user, src_db, dst_db, compare_db), depends_on=row_compare)
-
+                    
+                    queue = get_queue('low')
                     queue.enqueue(compare_db_views, args=(request.user, src_db, dst_db, compare_db))
                     queue.enqueue(compare_db_seq, args=(request.user, src_db, dst_db, compare_db))
                     #any_db(request.user, src_db, dst_db).c_db()

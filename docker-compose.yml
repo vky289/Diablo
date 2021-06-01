@@ -1,6 +1,6 @@
 version: '3.6'
 services:
-  redis-server:
+  diablo-redis:
     image: redis:latest
     restart: always
     container_name: redis_for_diablo
@@ -30,8 +30,9 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-  web:
+  diablo-web:
     build: .
+    image: diablo-web
     container_name: diablo-web
     volumes:
       - .:/code
@@ -39,4 +40,62 @@ services:
       - "8480:8000"
     depends_on:
       - diablo-db
-      - redis-server
+      - diablo-redis
+    links:
+      - diablo-redis
+      - diablo-db
+  django_rq_worker_default:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_default
+    command: python manage.py rqworker default
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_1
+    command: python manage.py rqworker high
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_2
+    command: python manage.py rqworker high
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_low:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_1
+    command: python manage.py rqworker low
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_low_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_2
+    command: python manage.py rqworker low
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis

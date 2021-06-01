@@ -11,7 +11,7 @@ class postgres_db:
         self.log = logging.getLogger(__name__)
         self.params = {'host': args1.host, 'database': args1.sid,
                        'port': args1.port, 'user': args1.username,
-                       'password': args1.password}
+                       'password': args1.password, 'connect_timeout': 3}
 
     def get_connection(self):
         try:

@@ -101,9 +101,9 @@ DATABASES = {
 }
 
 RQ_QUEUES = {
-    "default": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
-    "high": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
-    "low": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "default": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "high": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "low": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
 }
 
 
