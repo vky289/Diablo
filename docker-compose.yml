@@ -3,7 +3,7 @@ services:
   diablo-redis:
     image: redis:latest
     restart: always
-    container_name: redis_for_diablo
+    container_name: diablo-redis
     ports:
       - 6379:6379
     depends_on:
