@@ -21,7 +21,7 @@ from notifications.models import Notification
 from notifications.views import NotificationViewList
 from django.shortcuts import get_object_or_404
 
-redis = Redis(host="localhost", db=0, port=6379, socket_connect_timeout=10, socket_timeout=10)
+redis = Redis(host="redis_for_diablo", db=0, port=6379, socket_connect_timeout=10, socket_timeout=10)
 
 
 class DjangoRQDetailView(PermissionRequiredMixin, ListView):

@@ -17,6 +17,7 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PRODUCTION = True
 
 env = environ.Env()
 env_file = os.path.join(BASE_DIR, 'config', '.env')
@@ -100,7 +101,9 @@ DATABASES = {
 }
 
 RQ_QUEUES = {
-    "default": {"HOST": "localhost", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "default": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "high": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "low": {"HOST": "redis-server", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
 }
 
 
