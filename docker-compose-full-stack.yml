@@ -1,0 +1,101 @@
+version: '3.6'
+services:
+  diablo-redis:
+    image: redis:latest
+    restart: always
+    container_name: diablo-redis
+    ports:
+      - 6379:6379
+    depends_on:
+      - diablo-db
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  diablo-db:
+    image: postgres:12.3
+    restart: always
+    container_name: diablo-db
+    environment:
+      POSTGRES_PASSWORD: diablo
+      POSTGRES_USER: diablo
+      POSTGRES_DB: diablo
+    ports:
+      - 6432:5432
+    volumes:
+      - ./volumes:/var/lib/postgresql/data:cached
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "diablo", "-U", "diablo" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  diablo-web:
+    build: .
+    image: diablo-web
+    container_name: diablo-web
+    volumes:
+      - .:/code
+    ports:
+      - "8480:8000"
+    depends_on:
+      - diablo-db
+      - diablo-redis
+    links:
+      - diablo-redis
+      - diablo-db
+  django_rq_worker_default:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_default
+    command: python manage.py rqworker default
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_1
+    command: python manage.py rqworker high
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_2
+    command: python manage.py rqworker high
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_low:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_1
+    command: python manage.py rqworker low
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_low_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_2
+    command: python manage.py rqworker low
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
