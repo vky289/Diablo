@@ -115,10 +115,13 @@
                                                     data-target="#dataTypeCompareModal">{{ res.table_name }}
                                             </button>
                                             {% if res.geom == True %}
-                                                <i class="fa fa-globe" aria-hidden="true" title="Geom"></i>
+                                                <i class="fa fa-map-marker" aria-hidden="true" title="Geom"/>
                                             {% endif %}
                                             {% if res.mismatch_in_cols_count == True %}
-                                            <i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i>
+                                            <i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"/>
+                                            {% endif %}
+                                            {%if res.src_row_count == res.dst_row_count %}
+                                            <i class="fa fa-check" title="Row count match"/>
                                             {% endif %}
                                         </td>
                                         <td>{{ res.src_row_count }}</td>
@@ -155,8 +158,8 @@
                                 {% for res in db_view_results %}
                                 <tr>
                                     <td>{{ res.table_name }}</td>
-                                    <td>{{ res.src_exists }}</td>
-                                    <td>{{ res.dst_exists }}</td>
+                                    <td>{% if res.src_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"/>{% endif %}</td>
+                                    <td>{% if res.dst_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"/>{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </table>
@@ -175,8 +178,8 @@
                                 {% for res in db_seq_results %}
                                 <tr>
                                     <td>{{ res.table_name }}</td>
-                                    <td>{{ res.src_exists }}</td>
-                                    <td>{{ res.dst_exists }}</td>
+                                    <td>{% if res.src_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"/>{% endif %}</td>
+                                    <td>{% if res.dst_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"/>{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </table>

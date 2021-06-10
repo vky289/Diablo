@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import environ
 import os
+from django.utils.crypto import get_random_string
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,8 +24,9 @@ env = environ.Env()
 env_file = os.path.join(BASE_DIR, 'config', '.env')
 environ.Env.read_env(env_file=env_file)
 
+chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.str('SECRET_KEY')
+SECRET_KEY = get_random_string(50, chars)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
@@ -101,9 +103,9 @@ DATABASES = {
 }
 
 RQ_QUEUES = {
-    "default": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
-    "high": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
-    "low": {"HOST": "diablo-redis", "PORT": 6379, "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "default": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "high": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "low": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
 }
 
 

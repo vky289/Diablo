@@ -226,12 +226,17 @@ class scrapper:
             fin_rows = fin_rows[0: len(fin_rows) - 1]
         return fin_rows, fin_set
 
-    def dump_object(self, obj):
+
+    def dump_clob_object(self, obj):
+        return obj.read()
+
+
+    def dump_geom_object(self, obj):
         if obj.type.iscollection:
             li = []
             for value in obj.aslist():
                 if isinstance(value, cx_Oracle.Object):
-                    li.append(self.dump_object(value))
+                    li.append(self.dump_geom_object(value))
                 else:
                     li.append(repr(value))
             return li
@@ -240,7 +245,7 @@ class scrapper:
             for attr in obj.type.attributes:
                 value = getattr(obj, attr.name)
                 if isinstance(value, cx_Oracle.Object):
-                    di[attr.name] = self.dump_object(value)
+                    di[attr.name] = self.dump_geom_object(value)
                 else:
                     di[attr.name] = repr(value)
             return di
@@ -265,7 +270,9 @@ class scrapper:
                     tt = tuple()
                     for rr in row:
                         if isinstance(rr, cx_Oracle.Object):
-                            tt += (self.dump_object(rr), )
+                            tt += (self.dump_geom_object(rr), )
+                        elif isinstance(rr, cx_Oracle.LOB):
+                            tt += (self.dump_clob_object(rr), )
                         else:
                             tt += (rr, )
                     data.append(tt)
