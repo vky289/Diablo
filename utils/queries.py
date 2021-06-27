@@ -73,12 +73,28 @@ from (
          query_to_xml(format('select count(*) as cnt from %I.%I', table_schema, table_name), false, true, '') as xml_count
   from information_schema.tables
   where table_schema = $SCHEMA ) t'''
-O_FK_LIST = '''SELECT a.table_name, a.column_name, a.constraint_name, c.owner, 
-       c.r_owner, c_pk.table_name r_table_name, c_pk.constraint_name r_pk
-  FROM all_cons_columns a
-  JOIN all_constraints c ON a.owner = c.owner
-                        AND a.constraint_name = c.constraint_name
-  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
-                           AND c.r_constraint_name = c_pk.constraint_name
- WHERE c.constraint_type = 'R' '''
-P_FK_LIST = ''''''
+O_FK_LIST = '''SELECT a.constraint_name, a.table_name, a.column_name, 
+c_pk.table_name foreign_table_name, a_pk.COLUMN_NAME foreign_column_name
+FROM all_cons_columns a
+         JOIN all_constraints c ON a.owner = c.owner
+    AND a.constraint_name = c.constraint_name
+         JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
+    AND c.r_constraint_name = c_pk.constraint_name
+JOIN all_cons_columns a_pk ON c_pk.OWNER = a_pk.OWNER
+AND c_pk.CONSTRAINT_NAME = a_pk.constraint_name
+WHERE c.constraint_type = 'R' and c.OWNER = :SCH'''
+P_FK_LIST = '''SELECT
+    UPPER(tc.constraint_name),
+    UPPER(tc.table_name),
+    UPPER(kcu.column_name),
+    UPPER(ccu.table_name) AS foreign_table_name,
+    UPPER(ccu.column_name) AS foreign_column_name
+FROM
+    information_schema.table_constraints AS tc
+        JOIN information_schema.key_column_usage AS kcu
+             ON tc.constraint_name = kcu.constraint_name
+                 AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage AS ccu
+             ON ccu.constraint_name = tc.constraint_name
+                 AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY' and tc.table_schema = $SCHEMA'''

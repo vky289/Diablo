@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import environ
 import os
-from django.utils.crypto import get_random_string
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +23,7 @@ env = environ.Env()
 env_file = os.path.join(BASE_DIR, 'config', '.env')
 environ.Env.read_env(env_file=env_file)
 
-chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_string(50, chars)
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
@@ -35,7 +32,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
-
+SECRET_KEY = env.str("SECRET_KEY")
 # Application definition
 
 INSTALLED_APPS = [
@@ -50,6 +47,8 @@ INSTALLED_APPS = [
     'easyaudit',
     "django_rq",
     'notifications',
+    'rest_framework',
+    'rest_framework.authtoken',
 
     #inner app
     'app',
@@ -178,4 +177,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DJANGO_NOTIFICATIONS_CONFIG = {
     'SOFT_DELETE': True,
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_MODEL_SERIALIZER_CLASS':
+        'rest_framework.serializers.HyperlinkedModelSerializer',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ],
+    'PAGE_SIZE': 5000
 }

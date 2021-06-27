@@ -3,11 +3,12 @@ from utils.script_scrapper import scrapper
 from utils.queries import O_RET_TABLE_ROW_QUERY, O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q
 from django_rq import job
 from app.dbs.models import DBStats, DBCompare
-
+from utils.common_func import send_notification
 
 class xerox:
-    def __init__(self, src_db, dst_db, table_name, table_row_count, upper_bound, commit_each):
+    def __init__(self, user, src_db, dst_db, table_name, table_row_count, upper_bound, commit_each):
         self.log = logging.getLogger(__name__)
+        self.user = user
         self.src_db = src_db
         self.dst_db = dst_db
         self.src_db_type = self.src_db.type
@@ -59,16 +60,21 @@ class xerox:
 
 
     def execute_it(self):
-        pk_col = self.get_primary_key()
+        try:
+            pk_col = self.get_primary_key()
 
-        if pk_col is None:
-            pk_col = self.get_unique_key()
+            if pk_col is None:
+                pk_col = self.get_unique_key()
 
-        data, col_names = scrapper(db_type=self.src_db_type,
-                                   main_db=self.src_db).crawl_db(O_RET_TABLE_ROW_QUERY, self.table_name, int(self.table_row_count), pk_col,
-                                                                 upper_bound=self.upper_bound)
+            data, col_names = scrapper(db_type=self.src_db_type,
+                                       main_db=self.src_db).crawl_db(O_RET_TABLE_ROW_QUERY, self.table_name, int(self.table_row_count), pk_col,
+                                                                     upper_bound=self.upper_bound)
 
-        divide_by = 1000
-        for i in range(0, len(data), divide_by):
-            self.insert_rows(data[i: i + divide_by], col_names, self.commit_each)
-            # self.insert_rows.delay(data[i: i + divide_by], col_names)
+            divide_by = 1000
+            for i in range(0, len(data), divide_by):
+                self.insert_rows(data[i: i + divide_by], col_names, self.commit_each)
+                # self.insert_rows.delay(data[i: i + divide_by], col_names)
+            send_notification(self.user, "DB {} -> {} table content copied - {}".format(self.src_db.name, self.dst_db.name, self.table_name))
+        except Exception as e:
+            send_notification(self.user, "DB {} -> {} exception occurred during copy of table - {}- {}".format(self.src_db.name, self.dst_db.name,
+                                                                                                               self.table_name, e))

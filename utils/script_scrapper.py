@@ -194,13 +194,13 @@ class scrapper:
         return prim_key
 
     def prepare_stmt(self, rows, values):
-        col_to_avoid = ['ROW_NUM', 'COMMENT_ID']
+        col_to_avoid = ['ROW_NUM']
         try:
             cols = SYSetting.objects.get(name="COL_TO_AVOID")
             c_to_a = cols.value
             for i in c_to_a.split(','):
                 if i not in col_to_avoid:
-                    col_to_avoid.append(i)
+                    col_to_avoid.append(i.strip())
         except SYSetting.DoesNotExist:
             pass
         fin_rows = ''

@@ -99,6 +99,27 @@ class DBObjectCompare(models.Model):
         ordering = ('table_name', )
 
 
+class DBObjectFKCompare(models.Model):
+    id = models.AutoField(primary_key=True)
+    compare_dbs = models.ForeignKey(DBCompare, on_delete=models.CASCADE, related_name='s4_db_d4_db')
+    const_name = models.CharField(max_length=50, blank=True, null=True)
+    src_1_table_name = models.CharField(max_length=50, blank=True, null=True)
+    src_1_col_name = models.CharField(max_length=50, blank=True, null=True)
+    src_2_table_name = models.CharField(max_length=50, blank=True, null=True)
+    src_2_col_name = models.CharField(max_length=50, blank=True, null=True)
+    dst_1_table_name = models.CharField(max_length=50, blank=True, null=True)
+    dst_1_col_name = models.CharField(max_length=50, blank=True, null=True)
+    dst_2_table_name = models.CharField(max_length=50, blank=True, null=True)
+    dst_2_col_name = models.CharField(max_length=50, blank=True, null=True)
+    added_on = models.DateTimeField(auto_now_add=True, blank=True)
+
+    class Meta:
+        ordering = ('const_name', 'src_1_table_name', 'src_1_col_name', 'src_2_table_name', 'src_2_col_name', )
+        indexes = [
+            models.Index(fields=['const_name', 'src_1_table_name', 'src_1_col_name', ]),
+        ]
+
+
 class DBStats(models.Model):
     id = models.AutoField(primary_key=True)
     compare_dbs = models.ForeignKey(DBCompare, on_delete=models.CASCADE, related_name='s2_db_d2_db')

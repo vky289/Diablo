@@ -22,11 +22,9 @@ from app.core.views.common_views import index
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', index, name='home'),
-    path('django-rq/', include('django_rq.urls')),
+    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
     # Auth routes - login / register
     path("", include("app.authentication.urls"), name="auth"),
-
-    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
 
     # Apps
     path("", include("app.core.urls"), name='core'),

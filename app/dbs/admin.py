@@ -1,5 +1,5 @@
 from django.contrib import admin
-from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBStats, DBObjectCompare
+from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBStats, DBObjectCompare, DBObjectFKCompare
 
 
 class DBInstanceAdmin(admin.ModelAdmin):
@@ -64,6 +64,23 @@ class DBObjectCompareAdmin(admin.ModelAdmin):
     )
 
 
+class DBObjectFKCompareAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'compare_dbs',
+        'const_name',
+        'src_1_table_name',
+        'src_1_col_name',
+        'src_2_table_name',
+        'src_2_col_name',
+        'dst_1_table_name',
+        'dst_1_col_name',
+        'dst_2_table_name',
+        'dst_2_col_name',
+        'added_on',
+    )
+
+
 class DBStatsAdmin(admin.ModelAdmin):
     list_display = (
         'id',
@@ -80,4 +97,5 @@ admin.site.register(DBCompare, DBCompareAdmin)
 admin.site.register(DBTableCompare, DBTableCompareAdmin)
 admin.site.register(DBTableColumnCompare, DBTableColumnCompareAdmin)
 admin.site.register(DBObjectCompare, DBObjectCompareAdmin)
+admin.site.register(DBObjectFKCompare, DBObjectFKCompareAdmin)
 admin.site.register(DBStats, DBStatsAdmin)

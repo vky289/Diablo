@@ -1,13 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.views import View
 from django.views.generic import RedirectView, DetailView, TemplateView, ListView
 from django.contrib import messages
-from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq
+from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, compare_db_fk
 from django.urls import reverse
-from django.http import HttpResponseRedirect
-from django.utils import timezone
+from django.http import HttpResponseRedirect, HttpResponse
 from django_rq import get_queue
+from django.http import JsonResponse
+import json as simplejson
+from django.core.serializers.json import DjangoJSONEncoder
+from django.shortcuts import render
+from django.forms.models import model_to_dict
 
-from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBObjectCompare
+from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
 from utils.enums import DbType, DBObject
 from utils.enable_disable_triggers import triggers
 from utils.compare_database import any_db
@@ -91,9 +96,9 @@ class DbCompareDetailView(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['db_instance_or'] = DBInstance.objects.all().order_by('-host', 'name')
-        context['db_instance_pg'] = context['db_instance_or']
+        #context['db_instance_pg'] = context['db_instance_or']
         #context['db_instance_or'] = DBInstance.objects.filter(type='oracle').order_by('-host', 'name')
-        #context['db_instance_pg'] = DBInstance.objects.filter(type='postgres').order_by('-host', 'name')
+        context['db_instance_pg'] = DBInstance.objects.filter(type='postgres').order_by('-host', 'name')
         context['compare_results'] = DBCompare.objects.values_list('src_db',
                                                                    'dst_db'
                                                                    ).distinct()
@@ -144,6 +149,56 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
         return context
 
 
+class DBCompareTableViewResult(PermissionRequiredMixin, ListView):
+    permission_required = add_instance
+    model = DBObjectCompare
+
+    def dispatch(self, request, *args, **kwargs):
+        final_res = {}
+        src_db = self.kwargs['id1']
+        dst_db = self.kwargs['id2']
+        db_compare = DBCompare.objects.filter(src_db=src_db, dst_db=dst_db)
+        compare_db_views = DBObjectCompare.objects.filter(compare_dbs=db_compare[0].id, type=DBObject.VIEW).exclude(
+            src_exists=False, dst_exists=False).values()
+        final_res["total"] = len(compare_db_views)
+        rows = []
+        for c_d_v in compare_db_views:
+            rows.append({'table_name': c_d_v['table_name'], 'src_exists': c_d_v['src_exists'], 'dst_exists': c_d_v['src_exists']})
+        final_res['rows'] = rows
+        return JsonResponse(simplejson.dumps(
+            final_res
+        ), safe=False)
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(**kwargs)
+        data = self.get_context_data(object=self.object)
+        if self.request.GET:
+            src_db = self.kwargs['id1']
+            dst_db = self.kwargs['id2']
+            db_compare = DBCompare.objects.filter(src_db=src_db, dst_db=dst_db)
+            compare_db_views = list(DBObjectCompare.objects.filter(compare_dbs=db_compare[0].id, type=DBObject.VIEW).exclude(
+                src_exists=False, dst_exists=False).values())
+            return JsonResponse(simplejson.dumps(
+                compare_db_views,
+                sort_keys=True,
+                indent=1,
+                cls=DjangoJSONEncoder
+            ))
+        return self.render_to_response(data)
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #
+    #     try:
+    #
+    #         # for c_d_v in compare_db_views:
+    #         #     c_d_v['table_name'] = model_to_dict(c_d_v['table_name'])
+    #         return HttpResponse(, content_type="application.json")
+    #     except DBCompare.DoesNotExist:
+    #         pass
+
+
 class DbCompareResultView(PermissionRequiredMixin, ListView):
     permission_required = add_instance
     model = DBInstance
@@ -165,6 +220,8 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                 context['db_seq_results'] = DBObjectCompare.objects.filter(compare_dbs=db_compare[0].id, type=DBObject.SEQUENCE).exclude(
                     src_exists=False, dst_exists=False).order_by(
                     'table_name')
+                context['db_fk_results'] = DBObjectFKCompare.objects.filter(compare_dbs=db_compare[0].id).order_by(
+                    'const_name')
                 db_compare_entry = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id)
                 if len(db_compare_entry) > 0:
                     context['last_update'] = db_compare_entry.latest('added_on').added_on
@@ -228,9 +285,8 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     queue = get_queue('low')
                     queue.enqueue(compare_db_views, args=(request.user, src_db, dst_db, compare_db))
                     queue.enqueue(compare_db_seq, args=(request.user, src_db, dst_db, compare_db))
-                    #any_db(request.user, src_db, dst_db).c_db()
-                    #any_db(request.user, src_db, dst_db).cdata_db()
-                    #any_db(request.user, src_db, dst_db).cdata_view()
+                    queue.enqueue(compare_db_fk, args=(request.user, src_db, dst_db, compare_db))
+                    #any_db(request.user, src_db, dst_db, compare_db).fk_db()
                     messages.info(request, f'DB table row comparisons started!')
                 else:
                     messages.info(request, 'Permission required to compare DB!!')
