@@ -17,7 +17,6 @@ import notifications.urls
 from django.conf.urls import url
 from django.contrib import admin
 from django.urls import path, include
-from app.core.views.common_views import index
 from rest_framework import routers
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
@@ -41,16 +40,15 @@ router.register(r'dbFK', DBFKListSet)
 router.register(r'dbSeq', DBSeqListSet)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('django-rq/', include('django_rq.urls')),
-    url('inbox/notifications/', include(notifications.urls, namespace='notifications')),
+    path(r'admin/', admin.site.urls),
+    path(r'django-rq/', include('django_rq.urls')),
     # Auth routes - login / register
-    path("", include("app.authentication.urls"), name="auth"),
+    path(r'', include('app.authentication.urls'), name='auth'),
     # Apps
-    path('', index, name='home'),
-    path("", include("app.core.urls"), name='core'),
-    path("dbs/", include("app.dbs.urls"), name='dbs'),
+    path(r'', include('app.core.urls'), name='core'),
+    url(r'inbox/notifications/', include(notifications.urls, namespace='notifications')),
+    path(r'dbs/', include('app.dbs.urls'), name='dbs'),
     # Rest API's
-    path('api/v1/', include((router.urls, 'diablo'), namespace='api')),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path(r'api/v1/', include((router.urls, 'diablo'), namespace='api')),
+    path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
