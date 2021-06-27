@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from rest_framework import permissions
 from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare
-from app.dbs.serializers import DbViewSerializer, DBFKSerializer, DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
+from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
+from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
 from utils.enums import DBObject
 
 
@@ -52,7 +53,7 @@ class DBTableColumnListSet(viewsets.ModelViewSet):
 
 
 class DBViewListSet(viewsets.ModelViewSet):
-    serializer_class = DbViewSerializer
+    serializer_class = DbObjectSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = DBObjectCompare.objects.all()
     http_method_names = ['get', ]
@@ -61,11 +62,11 @@ class DBViewListSet(viewsets.ModelViewSet):
         if self.request.query_params.get('compare_db') is not None:
             return self.queryset.filter(type=DBObject.VIEW, compare_dbs=self.request.query_params.get('compare_db')).order_by("table_name")
         else:
-            return self.queryset.order_by("table_name")
+            return self.queryset.filter(type=DBObject.VIEW).order_by("table_name")
 
 
 class DBSeqListSet(viewsets.ModelViewSet):
-    serializer_class = DbViewSerializer
+    serializer_class = DbObjectSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = DBObjectCompare.objects.all()
     http_method_names = ['get', ]
@@ -74,7 +75,7 @@ class DBSeqListSet(viewsets.ModelViewSet):
         if self.request.query_params.get('compare_db') is not None:
             return self.queryset.filter(type=DBObject.SEQUENCE, compare_dbs=self.request.query_params.get('compare_db')).order_by("table_name")
         else:
-            return self.queryset.order_by("table_name")
+            return self.queryset.filter(type=DBObject.SEQUENCE).order_by("table_name")
 
 
 class DBFKListSet(viewsets.ModelViewSet):

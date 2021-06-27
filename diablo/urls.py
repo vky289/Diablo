@@ -35,9 +35,9 @@ router.register(r'dbInstance', DBInstanceListSet)
 router.register(r'dbCompare', DBCompareListSet)
 router.register(r'dbTable', DBTableListSet)
 router.register(r'dbTableColumn', DBTableColumnListSet)
-router.register(r'dbvView', DBViewListSet)
 router.register(r'dbFK', DBFKListSet)
-router.register(r'dbSeq', DBSeqListSet)
+router.register(r'dbView', DBViewListSet, basename='dbView')
+router.register(r'dbSeq', DBSeqListSet, basename='dbSeq')
 
 urlpatterns = [
     path(r'admin/', admin.site.urls),

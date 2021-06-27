@@ -52,7 +52,7 @@ class DBTableCompareSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DBTableColumnSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="api:dbcompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbtablecolumncompare-detail")
     type = EnumChoiceField(enum_class=DbType)
 
     class Meta:
@@ -64,8 +64,7 @@ class DBTableColumnSerializer(serializers.HyperlinkedModelSerializer):
         return super(DBTableColumnSerializer, self).to_representation(instance)
 
 
-class DbViewSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="api:dbtablecompare-detail")
+class DbObjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DBObjectCompare
@@ -73,7 +72,7 @@ class DbViewSerializer(serializers.HyperlinkedModelSerializer):
 
     def to_representation(self, instance):
         self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='api:dbcompare-detail', read_only=True)
-        return super(DbViewSerializer, self).to_representation(instance)
+        return super(DbObjectSerializer, self).to_representation(instance)
 
 
 class DBFKSerializer(serializers.HyperlinkedModelSerializer):
