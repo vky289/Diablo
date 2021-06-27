@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="auth:api:group-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:group-detail")
 
     class Meta:
         model = Group
@@ -11,7 +11,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PermissionSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="auth:api:permission-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:permission-detail")
 
     class Meta:
         model = Permission
@@ -19,11 +19,11 @@ class PermissionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="auth:api:user-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:user-detail")
     groups = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        view_name='auth:api:group-detail',
+        view_name='api:group-detail',
     )
 
     class Meta:

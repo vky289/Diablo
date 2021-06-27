@@ -22,7 +22,7 @@ class RelatedFieldAlternative(serializers.PrimaryKeyRelatedField):
 
 
 class DBInstanceSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbinstance-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbinstance-detail")
 
     class Meta:
         model = DBInstance
@@ -30,7 +30,7 @@ class DBInstanceSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DBCompareSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbcompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbcompare-detail")
     src_db = RelatedFieldAlternative(queryset=DBInstance.objects.all(), serializer=DBInstanceSerializer)
     dst_db = RelatedFieldAlternative(queryset=DBInstance.objects.all(), serializer=DBInstanceSerializer)
 
@@ -40,19 +40,19 @@ class DBCompareSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DBTableCompareSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbtablecompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbtablecompare-detail")
 
     class Meta:
         model = DBTableCompare
         fields = '__all__'
 
     def to_representation(self, instance):
-        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='dbs:dbb:dbcompare-detail', read_only=True)
+        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='api:dbcompare-detail', read_only=True)
         return super(DBTableCompareSerializer, self).to_representation(instance)
 
 
 class DBTableColumnSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbcompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbcompare-detail")
     type = EnumChoiceField(enum_class=DbType)
 
     class Meta:
@@ -60,29 +60,29 @@ class DBTableColumnSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
-        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='dbs:dbb:dbcompare-detail', read_only=True)
+        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='api:dbcompare-detail', read_only=True)
         return super(DBTableColumnSerializer, self).to_representation(instance)
 
 
 class DbViewSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbtablecompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbtablecompare-detail")
 
     class Meta:
         model = DBObjectCompare
         fields = '__all__'
 
     def to_representation(self, instance):
-        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='dbs:dbb:dbcompare-detail', read_only=True)
+        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='api:dbcompare-detail', read_only=True)
         return super(DbViewSerializer, self).to_representation(instance)
 
 
 class DBFKSerializer(serializers.HyperlinkedModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="dbs:dbb:dbobjectfkcompare-detail")
+    url = serializers.HyperlinkedIdentityField(view_name="api:dbobjectfkcompare-detail")
 
     class Meta:
         model = DBObjectFKCompare
         fields = '__all__'
 
     def to_representation(self, instance):
-        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='dbs:dbb:dbcompare-detail', read_only=True)
+        self.fields['compare_dbs'] = serializers.HyperlinkedRelatedField(view_name='api:dbcompare-detail', read_only=True)
         return super(DBFKSerializer, self).to_representation(instance)

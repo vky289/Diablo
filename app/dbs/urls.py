@@ -1,25 +1,10 @@
 # -*- encoding: utf-8 -*-
 from app.dbs.views.common_views import DbInstanceDetailView, DbCompareDetailView
 from app.dbs.views.common_views import DbInstanceEditView, DbCompareResultView, DBCompareDataTypeResultView, DBCompareTableViewResult
-from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet
-from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTableListSet, DBTableColumnListSet
-
-
-from django.urls import include, path
-from rest_framework import routers
-
-router = routers.DefaultRouter()
-router.register(r'dbInstance', DBInstanceListSet)
-router.register(r'dbCompare', DBCompareListSet)
-router.register(r'dbTable', DBTableListSet)
-router.register(r'dbTableColumn', DBTableColumnListSet)
-router.register(r'dbvView', DBViewListSet)
-router.register(r'dbFK', DBFKListSet)
-router.register(r'dbSeq', DBSeqListSet)
+from django.urls import path
 
 app_name = 'dbs'
 urlpatterns = [
-    path(r'api/', include((router.urls, 'db'), namespace='dbb')),
     # path('db_instance_add', DbInstanceActionView.as_view(), name='db_instance_add'),
     path('view/', DbInstanceDetailView.as_view(), name='db_details'),
     path('edit/<int:pk>', DbInstanceEditView.as_view(), name='db_edit_details'),
