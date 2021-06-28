@@ -214,14 +214,6 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                 context['db_compare_results'] = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).exclude(
                     src_row_count=None, dst_row_count=None).exclude(src_row_count=None).order_by(
                     '-src_row_count')
-                context['db_view_results'] = DBObjectCompare.objects.filter(compare_dbs=db_compare[0].id, type=DBObject.VIEW).exclude(
-                    src_exists=False, dst_exists=False).order_by(
-                    'table_name')
-                context['db_seq_results'] = DBObjectCompare.objects.filter(compare_dbs=db_compare[0].id, type=DBObject.SEQUENCE).exclude(
-                    src_exists=False, dst_exists=False).order_by(
-                    'table_name')
-                context['db_fk_results'] = DBObjectFKCompare.objects.filter(compare_dbs=db_compare[0].id).order_by(
-                    'const_name')
                 db_compare_entry = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id)
                 if len(db_compare_entry) > 0:
                     context['last_update'] = db_compare_entry.latest('added_on').added_on

@@ -111,6 +111,8 @@ class DBObjectFKCompare(models.Model):
     dst_1_col_name = models.CharField(max_length=50, blank=True, null=True)
     dst_2_table_name = models.CharField(max_length=50, blank=True, null=True)
     dst_2_col_name = models.CharField(max_length=50, blank=True, null=True)
+    src_exists = models.BooleanField(default=False, null=True)
+    dst_exists = models.BooleanField(default=False, null=True)
     added_on = models.DateTimeField(auto_now_add=True, blank=True)
 
     class Meta:

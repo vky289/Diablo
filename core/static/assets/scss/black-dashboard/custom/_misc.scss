@@ -20,13 +20,6 @@
     @include transitions($fast-transition-time, $transition-ease);
 }
 
-.dropdown-toggle[aria-expanded="true"]:after,
-a[data-toggle="collapse"][aria-expanded="true"] .caret,
-.card-collapse .card a[data-toggle="collapse"][aria-expanded="true"] i,
-.card-collapse .card a[data-toggle="collapse"].expanded i{
-    @include rotate-180();
-}
-
 .caret{
   width: 0;
   height: 0;

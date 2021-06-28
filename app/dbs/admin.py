@@ -77,6 +77,8 @@ class DBObjectFKCompareAdmin(admin.ModelAdmin):
         'dst_1_col_name',
         'dst_2_table_name',
         'dst_2_col_name',
+        'src_exists',
+        'dst_exists',
         'added_on',
     )
 

@@ -96,170 +96,166 @@
             <div class="card-body">
                 <div class="tab-content" id="nav-tabContent">
                     <div class="table-responsive tab-pane fade show active" id="table_rows" role="tabpanel" aria-labelledby="table_rows">
-                        {% if db_compare_results %}
-                        <table class="table" cellspacing="0" width="100%">
-                            <tr>
-                                <th scope="col">Table Name</th>
-                                <th scope="col">Src # <img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
-                                                     alt="{{src_db_v.type}}"></th>
-                                <th scope="col">Dst # <img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
-                                                     alt="{{dst_db_v.type}}"></th>
-                                <th scope="col">Action</th>
-                            </tr>
-                            {% for res in db_compare_results %}
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbtablecompare-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <button type="button" class="btn btn-social"
-                                                data-toggle="modal"
-                                                data-remote="{% url 'dbs:compare_data_types' id1 id2 res.table_name %}"
-                                                data-target="#dataTypeCompareModal">{{ res.table_name }}
-                                        </button>
-                                        {% if res.geom == True %}
-                                        <i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i>
-                                        {% endif %}
-                                        {% if res.mismatch_in_cols_count == True %}
-                                        <i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i>
-                                        {% endif %}
-                                        {%if res.src_row_count != res.dst_row_count %}
-                                        <i class="fa fa-times" style="color: red;" title="Row count mis-match"></i>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ res.src_row_count }}</td>
-                                    <td>{% if not res.dst_row_count %}<i class="fa fa-times" style="color: red;"></i>{% else %}{{res.dst_row_count}}{% endif %}</td>
-                                    <td class="text-lg-center">
-                                        <form method="post"
-                                              action="{% url 'dbs:compare_db_results' id1 id2 res.table_name res.src_row_count %}">
-                                            {% csrf_token %}
-                                            <button  type="submit" name="copy" value="copy" class="btn btn-icon btn-info"
-                                                               title="Copy to PG"><i
-                                                class="fa fa-long-arrow-alt-right" aria-hidden="true"></i><i
-                                                class="fa fa-long-arrow-alt-left" aria-hidden="true"></i>
-                                            </button>
-                                            <button type="submit" name="truncate" value="truncate" class="btn btn-icon btn-danger"
-                                                    title="Truncate PG table"><i class="fa fa-trash" aria-hidden="true"></i>
-                                            </button>
-                                        </form>
-                                    </td>
+                                    <th data-field="table_name" data-sortable="true" scope="col">Table Name</th>
+                                    <th data-field="src_row_count" data-sortable="true"
+                                        data-footer-formatter="footerSrcFormatter" scope="col">Src # <img
+                                            src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
+                                                         alt="{{src_db_v.type}}"></th>
+                                    <th data-field="dst_row_count" data-sortable="true"
+                                        data-footer-formatter="footerSrcFormatter" scope="col">Dst # <img
+                                            src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
+                                                         alt="{{dst_db_v.type}}"></th>
+                                    <th data-field="table_name" data-formatter="operationFormatter" scope="col">Action</th>
                                 </tr>
-                            {% endfor %}
+                            </thead>
+<!--                            {% for res in db_compare_results %}-->
+<!--                                <tr>-->
+<!--                                    <td>-->
+<!--                                        <button type="button" class="btn btn-social"-->
+<!--                                                data-toggle="modal"-->
+<!--                                                data-remote="{% url 'dbs:compare_data_types' id1 id2 res.table_name %}"-->
+<!--                                                data-target="#dataTypeCompareModal">{{ res.table_name }}-->
+<!--                                        </button>-->
+<!--                                        {% if res.geom == True %}-->
+<!--                                        <i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i>-->
+<!--                                        {% endif %}-->
+<!--                                        {% if res.mismatch_in_cols_count == True %}-->
+<!--                                        <i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i>-->
+<!--                                        {% endif %}-->
+<!--                                        {%if res.src_row_count != res.dst_row_count %}-->
+<!--                                        <i class="fa fa-times" style="color: red;" title="Row count mis-match"></i>-->
+<!--                                        {% endif %}-->
+<!--                                    </td>-->
+<!--                                    <td>{{ res.src_row_count }}</td>-->
+<!--                                    <td>{% if not res.dst_row_count %}<i class="fa fa-times" style="color: red;"></i>{% else %}{{res.dst_row_count}}{% endif %}</td>-->
+<!--                                    <td class="text-lg-center">-->
+<!--                                        <form method="post"-->
+<!--                                              action="{% url 'dbs:compare_db_results' id1 id2 res.table_name res.src_row_count %}">-->
+<!--                                            {% csrf_token %}-->
+<!--                                            <button  type="submit" name="copy" value="copy" class="btn btn-icon btn-info"-->
+<!--                                                               title="Copy to PG"><i-->
+<!--                                                class="fa fa-long-arrow-alt-right" aria-hidden="true"></i><i-->
+<!--                                                class="fa fa-long-arrow-alt-left" aria-hidden="true"></i>-->
+<!--                                            </button>-->
+<!--                                            <button type="submit" name="truncate" value="truncate" class="btn btn-icon btn-danger"-->
+<!--                                                    title="Truncate PG table"><i class="fa fa-trash" aria-hidden="true"></i>-->
+<!--                                            </button>-->
+<!--                                        </form>-->
+<!--                                    </td>-->
+<!--                                </tr>-->
+<!--                            {% endfor %}-->
                         </table>
-                    {% endif %}
                     </div>
                     <div class="table-responsive tab-pane fade" id="table_view" role="tabpanel" aria-labelledby="table_view">
-                        <!--{% if db_view_results %}-->
-                        <table class="table">
-<!--                        <table class="table"-->
-<!--                               data-toolbar="#toolbar"-->
-<!--                               data-toggle="table"-->
-<!--                               data-search="true"-->
-<!--                               data-show-refresh="true"-->
-<!--                               data-show-toggle="true"-->
-<!--                               data-show-fullscreen="true"-->
-<!--                               data-show-columns="true"-->
-<!--                               data-show-columns-toggle-all="true"-->
-<!--                               data-detail-view="true"-->
-<!--                               data-show-export="true"-->
-<!--                               data-click-to-select="true"-->
-<!--                               data-detail-formatter="detailFormatter"-->
-<!--                               data-id-field="table_name"-->
-<!--                               data-page-list="[10, 25, 50, 100, all]"-->
-<!--                               data-url="{% url 'dbs:view_results' id1 id2 %}"-->
-<!--                               data-show-footer="true" data-response-handler="responseHandler">-->
-                            <tr>
-                                <th scope="col">View Name</th>
-                                <th scope="col">Src <img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
-                                                       alt="{{src_db_v.type}}"></th>
-                                <th scope="col">Dst <img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
-                                                       alt="{{dst_db_v.type}}"></th>
-                            </tr>
-                            {% for res in db_view_results %}
-                            <tr>
-                                <td>{{ res.table_name }}</td>
-                                <td>{% if res.src_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"
-                                                                                                 style="color:red"></i>{% endif %}</td>
-                                <td>{% if res.dst_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"
-                                                                                                 style="color:red"></i>{% endif %}</td>
-                            </tr>
-                            {% endfor %}
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbView-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
+                                <tr>
+                                    <th data-field="table_name" data-sortable="true"
+                                        scope="col">View Name</th>
+                                    <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                            src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
+                                                           alt="{{src_db_v.type}}"></th>
+                                    <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                            src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
+                                                           alt="{{dst_db_v.type}}"></th>
+                                </tr>
+                            </thead>
                         </table>
-                        {% endif %}
                     </div>
                     <div class="table-responsive tab-pane fade" id="table_seq" role="tabpanel" aria-labelledby="table_seq">
-                        {% if db_seq_results %}
-                        <table class="table" cellspacing="0" width="100%">
-                            <tr>
-                                <th scope="col">Sequence Name</th>
-                                <th scope="col">Src <img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
-                                                     alt="{{src_db_v.type}}"></th>
-                                <th scope="col">Dst <img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
-                                                     alt="{{dst_db_v.type}}"></th>
-                            </tr>
-                            {% for res in db_seq_results %}
-                            <tr>
-                                <td>{{ res.table_name }}</td>
-                                <td>{% if res.src_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"
-                                                                                                 style="color:red"></i>{% endif %}</td>
-                                <td>{% if res.dst_exists %}<i class="fa fa-check" />{% else %}<i class="fa fa-times"
-                                                                                                 style="color:red"></i>{% endif %}</td>
-                            </tr>
-                            {% endfor %}
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbSeq-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
+                                <tr>
+                                    <th data-field="table_name" data-sortable="true" scope="col">Sequence Name</th>
+                                    <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                            src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
+                                                         alt="{{src_db_v.type}}"></th>
+                                    <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                            src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
+                                                         alt="{{dst_db_v.type}}"></th>
+                                </tr>
+                            </thead>
                         </table>
-                        {% endif %}
                     </div>
                     <div class="table-responsive tab-pane fade accordion" id="table_fk" role="tabpanel" aria-labelledby="table_fk">
-                        {% if db_fk_results %}
-                        <table class="table" cellspacing="0" width="100%">
-                            <tr>
-                                <th scope="col">Constraint Name</th>
-                                <th scope="col">Src <img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
-                                                         alt="{{src_db_v.type}}"></th>
-                                <th scope="col">Dst <img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
-                                                         alt="{{dst_db_v.type}}"></th>
-                            </tr>
-                            {% for res in db_fk_results %}
-                            <tr>
-                                <div class="row">
-                                <td width="70%">
-                                    <div class="col">
-                                        <h5 class="mb-0">
-                                        <button class="btn btn-link" data-toggle="collapse" data-target="#collapse_{{ res.const_name }}"
-                                                aria-expanded="false"
-                                                aria-controls="collapse_{{ res.const_name }}">
-                                            {{ res.const_name }}
-                                        </button>
-                                        </h5>
-                                    </div>
-                                    <div class="col">
-                                        <div id="collapse_{{ res.const_name }}" class="collapse">
-                                            <div class="card card-body bg-neutral text-darker">
-                                                {% if res.src_1_table_name %}
-                                                <i class="fa fa-angle-double-up" aria-hidden="true">  {{ res.src_1_table_name }}
-                                                    ({{res.src_1_col_name}}) -> {{res.src_2_table_name }}
-                                                ({{res.src_2_col_name}})
-                                                    <br/>
-                                                {% endif %}
-                                                </i>
-                                                {% if res.dst_1_table_name %}
-                                                <i class="fa fa-angle-double-down" aria-hidden="true">  {{ res.dst_1_table_name }}
-                                                ({{res.dst_1_col_name}}) -> {{ res.dst_2_table_name }}
-                                                ({{res.dst_2_col_name}})
-                                                {% endif %}
-                                                </i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td width="15%">{% if res.src_1_table_name %}<i class="fa fa-check"></i>{% else %}<i class="fa fa-times"
-                                                                                                                     style="color:red"></i>
-                                    {% endif %}</td>
-                                <td width="15%">{% if res.dst_1_table_name %}<i class="fa fa-check"></i>{% else %}<i class="fa fa-times"
-                                                                                                                     style="color:red"><i>
-                                    {% endif %}</td>
-                                </div>
-                            </tr>
-                            {% endfor %}
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFKFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbobjectfkcompare-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
+                                <tr>
+                                    <th data-field="const_name" data-sortable="true" scope="col">Constraint Name</th>
+                                    <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                            src="{% static 'assets/img/' %}{{src_db_v.type}}.png"
+                                            width="40" height="40" alt="{{src_db_v.type}}"></th>
+                                    <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                        data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                            src="{% static 'assets/img/' %}{{dst_db_v.type}}.png"
+                                            width="40" height="40" alt="{{dst_db_v.type}}"></th>
+                                </tr>
+                            </thead>
                         </table>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -338,121 +334,139 @@
         $($(this).data("target")+' .modal-body').load($(this).data("remote"));
     });
 </script>
+<script type="text/javascript">
+    $(document).on('click', '#btn-copy', function(e){
+        e.preventDefault();
+        var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+        var bt_val = $(this).val().split('::');
+        $.ajax({
+           type: "PUT",
+           headers:{"X-CSRFToken": $crf_token},
+           xhrFields: {
+               withCredentials: true
+           },
+           url: "/api/v1/dbTableAction/copy?table_name=" + bt_val[0]
+                + "&row_count="+ bt_val[1] + "&src_id="+ bt_val[2] + "&dst_id="+ bt_val[3] ,
+           data: {
+               unparsed_value: $(this).val()
+           },
+           success: function (result) {
+               alert('Copy initiated for the DB table ' + bt_val[0]);
+           },
+           error: function (result) {
+               alert('Something went wrong! contact admin!');
+           }
+       });
+    });
+    $(document).on('click', '#btn-trun', function(e){
+        e.preventDefault();
+        var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+        var bt_val = $(this).val().split('::');
+        $.ajax({
+                   type: "PUT",
+                   headers:{"X-CSRFToken": $crf_token},
+                   xhrFields: {
+                       withCredentials: true
+                   },
+                   url: "/api/v1/dbTableAction/truncate?table_name=" + bt_val[0]
+                        + "&dst_id="+ bt_val[1] ,
+                   data: {
+                       unparsed_value: $(this).val()
+                   },
+                   success: function (result) {
+                       alert('Truncate initiated for the DB table ' + bt_val[0]);
+                   },
+                   error: function (result) {
+                       alert('Something went wrong! contact admin!');
+                   }
+               });
+    });
+</script>
 <script>
     var $table = $('#table')
-    var $remove = $('#remove')
-    var selections = []
-
-    function getIdSelections() {
-        return $.map($table.bootstrapTable('getSelections'), function (row) {
-            return row.id
-        })
-    }
 
     function responseHandler(res) {
-        $.each(res.rows, function (i, row) {
-            row.state = $.inArray(row.id, selections) !== -1
-        })
-        return res
+        var flatArray = [];
+        $.each(res.results, function(i, element) {
+            flatArray.push(element);
+        });
+        load(flatArray)
+        return flatArray;
+    }
+
+    function load(flatArray){
+        $('#table').bootstrapTable("load", flatArray);
     }
 
     function detailFormatter(index, row) {
         var html = []
         $.each(row, function (key, value) {
-            html.push('<p><b>' + key + ':</b> ' + value + '</p>')
+            if(typeof value === "string" || typeof value === "boolean" || value === parseInt(value, 10)) {
+                html.push('<p><b>' + key + ':</b> ' + value + '</p>')
+            }
         })
         return html.join('')
     }
 
-    function operateFormatter(value, row, index) {
+    function operationFormatter(value, row, index) {
         return [
-            '<a class="like" href="javascript:void(0)" title="Like">',
-            '<i class="fa fa-heart"></i>',
-            '</a>  ',
-            '<a class="remove" href="javascript:void(0)" title="Remove">',
-            '<i class="fa fa-trash"></i>',
-            '</a>'
+            '<p align="center">',
+            '{% csrf_token %}',
+            '<button id="btn-copy" type="button" value="' + ''
+            + row.table_name + '::' + row.src_row_count + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
+            '" class="btn btn-icon btn-info" title="Copy to PG">',
+            '<i class="fa fa-copy" aria-hidden="true"></i>',
+            '</button>',
+            '<button id="btn-trun" type="button" value="' + ''
+            + row.table_name + '::' + row.compare_dbs.dst_db.id +
+            '" class="btn btn-icon btn-danger" title="Truncate PG table">' +
+            '<i class="fa fa-trash" aria-hidden="true"></i>',
+            '</button>',
+            '</p>',
         ].join('')
     }
 
-    window.operateEvents = {
-        'click .like': function (e, value, row, index) {
-            alert('You click like action, row: ' + JSON.stringify(row))
-        },
-        'click .remove': function (e, value, row, index) {
-            $table.bootstrapTable('remove', {
-                field: 'id',
-                values: [row.id]
-            })
+    function footerSrcFormatter(row) {
+        var count = 0
+        $.each(row, function (key, value1) {
+            if (value1.src_exists === true) {
+                count++
+            }
+        })
+        return count
+    }
+
+    function footerDstFormatter(row) {
+        var count = 0
+        $.each(row, function (key, value1) {
+            if (value1.dst_exists === true) {
+                count++
+            }
+        })
+        return count
+    }
+
+    function detailFKFormatter(index, row) {
+        var html = []
+        if (row.src_1_table_name !== null) {
+            html.push('<p><b>' + row.src_1_table_name + '(' + row.src_1_col_name
+                      + ') <i class="fa fa-arrow-circle-right"></i> ' + row.src_2_table_name + '(' + row.src_2_col_name +
+                      ') </b></p>')
+        }
+        if (row.dst_1_table_name !== null) {
+            html.push('<p><b>' + row.dst_1_table_name + '(' + row.dst_1_col_name
+                      + ') <i class="fa fa-arrow-circle-right"></i> ' + row.dst_2_table_name + '(' + row.dst_2_col_name +
+                      ') </b></p>')
+        }
+        return html.join('')
+    }
+
+    function booleanFormatter(value, row) {
+        if (value === true) {
+            return "<i class='fa fa-check'></i>"
+        } else {
+            return "<i class='fa fa-times' style=\"color:red\"></i>"
         }
     }
-
-    function totalTextFormatter(data) {
-        return 'Total'
-    }
-
-    function totalNameFormatter(data) {
-        return data.length
-    }
-
-    function totalPriceFormatter(data) {
-        var field = this.field
-        return '$' + data.map(function (row) {
-            return +row[field].substring(1)
-        }).reduce(function (sum, i) {
-            return sum + i
-        }, 0)
-    }
-
-    function initTable() {
-        $table.bootstrapTable('destroy').bootstrapTable({
-                                                            height: 550,
-                                                            columns: [
-                                                                [{
-                                                                    field: 'table_name',
-                                                                    title: 'Table Name',
-                                                                    sortable: true,
-                                                                    align: 'center',
-                                                                    footerFormatter: totalNameFormatter
-                                                                }, {
-                                                                    field: 'src_exists',
-                                                                    title: 'Source',
-                                                                    sortable: true,
-                                                                    align: 'center',
-                                                                    footerFormatter: totalNameFormatter
-                                                                }, {
-                                                                    field: 'dst_sxists',
-                                                                    title: 'Destination',
-                                                                    sortable: true,
-                                                                    align: 'center',
-                                                                    footerFormatter: totalNameFormatter
-                                                                }]
-                                                            ]
-                                                        })
-        $table.on('check.bs.table uncheck.bs.table ' +
-                  'check-all.bs.table uncheck-all.bs.table',
-                  function () {
-                      $remove.prop('disabled', !$table.bootstrapTable('getSelections').length)
-
-                      // save your data, here just save the current page
-                      selections = getIdSelections()
-                      // push or splice the selections if you want to save all data selections
-                  })
-        $table.on('all.bs.table', function (e, name, args) {
-            console.log(name, args)
-        })
-        $remove.click(function () {
-            var ids = getIdSelections()
-            $table.bootstrapTable('remove', {
-                field: 'id',
-                values: ids
-            })
-            $remove.prop('disabled', true)
-        })
-    }
-
-    $(function() {
-        initTable()
-    })
 </script>
 {% endblock javascripts %}

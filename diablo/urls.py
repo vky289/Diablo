@@ -15,12 +15,14 @@ Including another URLconf
 """
 import notifications.urls
 from django.conf.urls import url
+from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
-from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet
+from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView
 from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTableListSet, DBTableColumnListSet
 
 
@@ -50,5 +52,6 @@ urlpatterns = [
     path(r'dbs/', include('app.dbs.urls'), name='dbs'),
     # Rest API's
     path(r'api/v1/', include((router.urls, 'diablo'), namespace='api')),
+    path(r'api/v1/dbTableAction/<slug:action>', DBTableActionView.as_view(), name="dbTableAction"),
     path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]

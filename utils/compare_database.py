@@ -160,6 +160,8 @@ class any_db:
                     obj.dst_1_col_name = p_dict.get(ll)[1] if p_dict.get(ll) is not None else None
                     obj.dst_2_table_name = p_dict.get(ll)[2] if p_dict.get(ll) is not None else None
                     obj.dst_2_col_name = p_dict.get(ll)[3] if p_dict.get(ll) is not None else None
+                    obj.src_exists = True if o_dict.get(ll) is not None else None
+                    obj.dst_exists = True if p_dict.get(ll) is not None else None
                     obj.save()
             send_notification(self.user, "DB {} -> {} Foreign Key comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
