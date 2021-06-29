@@ -1,6 +1,7 @@
 from django_rq import job
 import logging
 
+from app.dbs.models import DBInstance
 from utils.compare_database import any_db
 from utils.truncate_table import delete
 from utils.copy_table import xerox
@@ -53,3 +54,8 @@ def truncate_table(user, dst_db, table_name):
 def copy_table_content(user, src_db, dst_db, table_name, row_count, upper_bound, commit_each=False):
     xerox(user, src_db=src_db, dst_db=dst_db, table_name=table_name, table_row_count=row_count, upper_bound=upper_bound,
           commit_each=commit_each).execute_it()
+
+
+@job('default')
+def delete_instance_n_its_data(instance_id):
+    DBInstance.objects.get(id=instance_id).delete()

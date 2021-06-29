@@ -8,6 +8,7 @@ urlpatterns = [
     # path('db_instance_add', DbInstanceActionView.as_view(), name='db_instance_add'),
     path('view/', DbInstanceDetailView.as_view(), name='db_details'),
     path('edit/<int:pk>', DbInstanceEditView.as_view(), name='db_edit_details'),
+    path('', DbCompareDetailView.as_view(), name='compare_db'),
     path('compare/', DbCompareDetailView.as_view(), name='compare_db'),
     path('compare/<int:id1>/<int:id2>/', DbCompareResultView.as_view(), name='compare_db_results'),
     path('compare/<int:id1>/<int:id2>/compare/', DbCompareResultView.as_view(), name='compare_dbs'),

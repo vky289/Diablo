@@ -4,6 +4,7 @@ from django.views.generic import RedirectView, DetailView, TemplateView, ListVie
 from django.contrib import messages
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind
+from diablo.tasks import delete_instance_n_its_data
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django_rq import get_queue
@@ -61,9 +62,8 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
                         self.save_db_details(obj, request)
                         messages.info(request, f'DB Connections Updated saved!')
                     if self.request.POST.get('delete'):
-                        obj = DBInstance.objects.get(id=self.request.POST.get('id'))
-                        obj.delete()
-                        messages.info(request, f'DB Connections successfully deleted!')
+                        delete_instance_n_its_data.delay(self.request.POST.get('id'))
+                        messages.info(request, f'Delete initiated!!')
                 else:
                     messages.info(request, 'You don\'t have permission to modify/delete DB details!!')
             else:
