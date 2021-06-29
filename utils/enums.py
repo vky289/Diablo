@@ -18,3 +18,5 @@ class DBObject(models.TextChoices):
     VIEW = 'view', _('view')
     SEQUENCE = 'sequence', _('sequence')
     TRIGGER = 'trigger', _('trigger')
+    INDEX = 'index', _('index')
+

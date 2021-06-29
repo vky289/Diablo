@@ -14,7 +14,6 @@
         overflow-y: auto;
     }
 </style>
-<!--<link href="{% static 'assets/css/datatables.min.css' %}" rel="stylesheet">-->
 <link href="{% static 'assets/css/bootstrap-select.css' %}" rel="stylesheet" />
 
 
@@ -85,9 +84,15 @@
                     <a class="nav-item nav-link" id="nav-view-tab" data-toggle="tab" href="#table_view" role="tab"
                        aria-controls="table_view"
                        aria-selected="false">Views</a>
+                    <a class="nav-item nav-link" id="nav-view-ind" data-toggle="tab" href="#table_ind" role="tab"
+                       aria-controls="table_ind"
+                       aria-selected="false">Indexes</a>
                     <a class="nav-item nav-link" id="nav-seq-tab" data-toggle="tab" href="#table_seq" role="tab"
                        aria-controls="nav-contact"
                     aria-selected="false">Sequence</a>
+                    <a class="nav-item nav-link" id="nav-trig-tab" data-toggle="tab" href="#table_trig" role="tab"
+                       aria-controls="table_trig"
+                       aria-selected="false">Trigger</a>
                     <a class="nav-item nav-link" id="nav-fk-tab" data-toggle="tab" href="#table_fk" role="tab"
                        aria-controls="table_fk"
                     aria-selected="false">Foreign Key</a>
@@ -125,42 +130,6 @@
                                     <th data-field="table_name" data-formatter="operationFormatter" scope="col">Action</th>
                                 </tr>
                             </thead>
-<!--                            {% for res in db_compare_results %}-->
-<!--                                <tr>-->
-<!--                                    <td>-->
-<!--                                        <button type="button" class="btn btn-social"-->
-<!--                                                data-toggle="modal"-->
-<!--                                                data-remote="{% url 'dbs:compare_data_types' id1 id2 res.table_name %}"-->
-<!--                                                data-target="#dataTypeCompareModal">{{ res.table_name }}-->
-<!--                                        </button>-->
-<!--                                        {% if res.geom == True %}-->
-<!--                                        <i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i>-->
-<!--                                        {% endif %}-->
-<!--                                        {% if res.mismatch_in_cols_count == True %}-->
-<!--                                        <i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i>-->
-<!--                                        {% endif %}-->
-<!--                                        {%if res.src_row_count != res.dst_row_count %}-->
-<!--                                        <i class="fa fa-times" style="color: red;" title="Row count mis-match"></i>-->
-<!--                                        {% endif %}-->
-<!--                                    </td>-->
-<!--                                    <td>{{ res.src_row_count }}</td>-->
-<!--                                    <td>{% if not res.dst_row_count %}<i class="fa fa-times" style="color: red;"></i>{% else %}{{res.dst_row_count}}{% endif %}</td>-->
-<!--                                    <td class="text-lg-center">-->
-<!--                                        <form method="post"-->
-<!--                                              action="{% url 'dbs:compare_db_results' id1 id2 res.table_name res.src_row_count %}">-->
-<!--                                            {% csrf_token %}-->
-<!--                                            <button  type="submit" name="copy" value="copy" class="btn btn-icon btn-info"-->
-<!--                                                               title="Copy to PG"><i-->
-<!--                                                class="fa fa-long-arrow-alt-right" aria-hidden="true"></i><i-->
-<!--                                                class="fa fa-long-arrow-alt-left" aria-hidden="true"></i>-->
-<!--                                            </button>-->
-<!--                                            <button type="submit" name="truncate" value="truncate" class="btn btn-icon btn-danger"-->
-<!--                                                    title="Truncate PG table"><i class="fa fa-trash" aria-hidden="true"></i>-->
-<!--                                            </button>-->
-<!--                                        </form>-->
-<!--                                    </td>-->
-<!--                                </tr>-->
-<!--                            {% endfor %}-->
                         </table>
                     </div>
                     <div class="table-responsive tab-pane fade" id="table_view" role="tabpanel" aria-labelledby="table_view">
@@ -195,6 +164,38 @@
                             </thead>
                         </table>
                     </div>
+                    <div class="table-responsive tab-pane fade" id="table_ind" role="tabpanel" aria-labelledby="table_ind">
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbInd-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
+                            <tr>
+                                <th data-field="table_name" data-sortable="true"
+                                    scope="col">View Name</th>
+                                <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                        src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
+                                        alt="{{src_db_v.type}}"></th>
+                                <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                        src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
+                                        alt="{{dst_db_v.type}}"></th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
                     <div class="table-responsive tab-pane fade" id="table_seq" role="tabpanel" aria-labelledby="table_seq">
                         <table class="table"
                                data-toolbar="#toolbar"
@@ -223,6 +224,37 @@
                                             src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
                                                          alt="{{dst_db_v.type}}"></th>
                                 </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div class="table-responsive tab-pane fade" id="table_trig" role="tabpanel" aria-labelledby="table_trig">
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbTrig-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <thead>
+                            <tr>
+                                <th data-field="table_name" data-sortable="true" scope="col">Sequence Name</th>
+                                <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                        src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
+                                        alt="{{src_db_v.type}}"></th>
+                                <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                        src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
+                                        alt="{{dst_db_v.type}}"></th>
+                            </tr>
                             </thead>
                         </table>
                     </div>

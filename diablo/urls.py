@@ -23,7 +23,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
 from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView
-from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTableListSet, DBTableColumnListSet
+from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet
 
 
 
@@ -39,7 +39,9 @@ router.register(r'dbTable', DBTableListSet)
 router.register(r'dbTableColumn', DBTableColumnListSet)
 router.register(r'dbFK', DBFKListSet)
 router.register(r'dbView', DBViewListSet, basename='dbView')
+router.register(r'dbInd', DBIndListSet, basename='dbInd')
 router.register(r'dbSeq', DBSeqListSet, basename='dbSeq')
+router.register(r'dbTrig', DBTrigListSet, basename='dbTrig')
 
 urlpatterns = [
     path(r'admin/', admin.site.urls),

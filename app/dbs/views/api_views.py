@@ -14,7 +14,8 @@ from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
 from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
 from utils.enums import DBObject
 from rest_framework.decorators import action
-from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, compare_db_fk
+from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
+    compare_db_fk, compare_db_trig, compare_db_ind
 
 
 class DBInstanceListSet(viewsets.ModelViewSet):
@@ -105,6 +106,42 @@ class DBSeqListSet(viewsets.ModelViewSet):
             return self.queryset.filter(type=DBObject.SEQUENCE).order_by("table_name")
 
 
+class DBTrigListSet(viewsets.ModelViewSet):
+    serializer_class = DbObjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = DBObjectCompare.objects.all()
+    http_method_names = ['get', ]
+
+    def get_queryset(self):
+        src_db = self.request.query_params.get('src_db')
+        dst_db = self.request.query_params.get('dst_db')
+        compare_db = self.request.query_params.get('compare_db')
+        if compare_db is not None:
+            return self.queryset.filter(type=DBObject.TRIGGER, compare_dbs=compare_db).order_by("table_name")
+        elif src_db is not None and dst_db is not None:
+            return self.queryset.filter(type=DBObject.TRIGGER, compare_dbs=DBCompare.objects.get(src_db=src_db, dst_db = dst_db)).order_by("table_name")
+        else:
+            return self.queryset.filter(type=DBObject.TRIGGER).order_by("table_name")
+
+
+class DBIndListSet(viewsets.ModelViewSet):
+    serializer_class = DbObjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = DBObjectCompare.objects.all()
+    http_method_names = ['get', ]
+
+    def get_queryset(self):
+        src_db = self.request.query_params.get('src_db')
+        dst_db = self.request.query_params.get('dst_db')
+        compare_db = self.request.query_params.get('compare_db')
+        if compare_db is not None:
+            return self.queryset.filter(type=DBObject.INDEX, compare_dbs=compare_db).order_by("table_name")
+        elif src_db is not None and dst_db is not None:
+            return self.queryset.filter(type=DBObject.INDEX, compare_dbs=DBCompare.objects.get(src_db=src_db, dst_db = dst_db)).order_by("table_name")
+        else:
+            return self.queryset.filter(type=DBObject.INDEX).order_by("table_name")
+
+
 class DBFKListSet(viewsets.ModelViewSet):
     serializer_class = DBFKSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -174,6 +211,8 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
             queue.enqueue(compare_db_views, args=(request.user, src_db, dst_db, compare_db))
             queue.enqueue(compare_db_seq, args=(request.user, src_db, dst_db, compare_db))
             queue.enqueue(compare_db_fk, args=(request.user, src_db, dst_db, compare_db))
+            queue.enqueue(compare_db_ind, args=(request.user, src_db, dst_db, compare_db))
+            queue.enqueue(compare_db_trig, args=(request.user, src_db, dst_db, compare_db))
             return JsonResponse(data={'SuccessMessage': 'DB table row comparisons started!'})
 
         elif action == 'bulkImport':

@@ -16,12 +16,14 @@ O_ALL_TAB_SCRIPT_Q = "SELECT UPPER(table_name) as table_name FROM ALL_TABLES WHE
 P_ALL_TAB_SCRIPT_Q = "SELECT UPPER(table_name) as table_name FROM information_schema.tables WHERE table_schema= %(SCH)s"
 O_VW_SCRIPT_Q = "select view_name from all_views where OWNER = :SCH"
 P_VW_SCRIPT_Q = "select UPPER(table_name) from INFORMATION_SCHEMA.views WHERE table_schema= $SCHEMA"
-O_TRIG_SCRIPT_Q = "select trigger_name from all_triggers where OWNER = :SCHEMA"
-P_TRIG_SCRIPT_Q = "select upper(trigger_name) from information_schema.triggers where event_object_schema = %(SCHEMA)s group by 1"
+O_TRIG_SCRIPT_Q = "select trigger_name from all_triggers where OWNER = :SCH"
+P_TRIG_SCRIPT_Q = "select upper(trigger_name) from information_schema.triggers where event_object_schema = $SCHEMA group by 1"
 O_PRO_SCRIPT_Q = "SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OBJECT_TYPE IN ('FUNCTION','PROCEDURE') AND OWNER = :SCHEMA"
 P_PRO_SCRIPT_Q = '''SELECT UPPER(p.proname) AS function_name FROM pg_proc p JOIN   pg_namespace n ON n.oid = p.pronamespace WHERE  NOT 
         p.proisagg AND
         n.nspname <> 'information_schema' AND n.nspname = %(SCHEMA)s'''
+O_IND_SCRIPT_Q = '''select INDEX_NAME from USER_INDEXES where TABLE_OWNER = :SCH'''
+P_IND_SCRIPT_Q = '''SELECT UPPER(indexname) FROM pg_indexes WHERE schemaname = $SCHEMA'''
 O_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
 FROM sys.all_indexes i,
      sys.all_ind_columns c

@@ -3,7 +3,9 @@ import logging
 from utils.enums import DbType, DBObject
 from utils.script_scrapper import scrapper
 from app.dbs.models import DBTableCompare, DBCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
-from utils.queries import O_ROW_COUNT, P_ROW_COUNT, O_COLUMN_NAMES, P_COLUMN_NAMES, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q
+from utils.queries import O_ROW_COUNT, P_ROW_COUNT, O_COLUMN_NAMES, P_COLUMN_NAMES, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q, O_IND_SCRIPT_Q, \
+    P_IND_SCRIPT_Q, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q, \
+    O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q
 from utils.queries import O_FK_LIST, P_FK_LIST
 from utils.common_func import send_notification
 
@@ -165,23 +167,40 @@ class any_db:
                     obj.save()
             send_notification(self.user, "DB {} -> {} Foreign Key comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
-            send_notification(self.user, "DB {} -> {} exception occurred during Foreign Key comparison- {}".format(self.src_db.name, self.dst_db.name,
-                                                                                                                   e))
+            send_notification(self.user, "DB {} -> {} exception occurred during Foreign Key comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
 
     def cdata_view(self):
         try:
             self.x_c_data_extract(DBObject.VIEW, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} View comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
-            send_notification(self.user, "DB {} -> {} exception occurred during View comparison- {}".format(self.src_db.name, self.dst_db.name, e))
+            send_notification(self.user, "DB {} -> {} exception occurred during View comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
+
+    def cdata_ind(self):
+        try:
+            self.x_c_data_extract(DBObject.INDEX, O_IND_SCRIPT_Q, P_IND_SCRIPT_Q)
+            send_notification(self.user, "DB {} -> {} Index comparison completed".format(self.src_db.name, self.dst_db.name))
+        except Exception as e:
+            send_notification(self.user, "DB {} -> {} exception occurred during Index comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
 
     def cdata_seq(self):
         try:
             self.x_c_data_extract(DBObject.SEQUENCE, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} Sequence comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
-            send_notification(self.user, "DB {} -> {} exception occurred during Sequence comparison- {}".format(self.src_db.name, self.dst_db.name,
-                                                                                                                e))
+            send_notification(self.user, "DB {} -> {} exception occurred during Sequence comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
+
+    def cdata_trig(self):
+        try:
+            self.x_c_data_extract(DBObject.TRIGGER, O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q)
+            send_notification(self.user, "DB {} -> {} Trigger comparison completed".format(self.src_db.name, self.dst_db.name))
+        except Exception as e:
+            send_notification(self.user, "DB {} -> {} exception occurred during Trigger comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
 
     def x_c_data_extract(self, obj_type, o_script_q, p_script_q):
         obj1 = DBObjectCompare.objects.filter(compare_dbs=self.compare_db, type=obj_type)

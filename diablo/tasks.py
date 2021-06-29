@@ -25,6 +25,11 @@ def compare_db_views(user, src_db, dst_db, compare_db):
 
 
 @job('low')
+def compare_db_ind(user, src_db, dst_db, compare_db):
+    any_db(user, src_db, dst_db, compare_db).cdata_ind()
+
+
+@job('low')
 def compare_db_seq(user, src_db, dst_db, compare_db):
     any_db(user, src_db, dst_db, compare_db).cdata_seq()
 
@@ -32,6 +37,11 @@ def compare_db_seq(user, src_db, dst_db, compare_db):
 @job('low')
 def compare_db_fk(user, src_db, dst_db, compare_db):
     any_db(user, src_db, dst_db, compare_db).fk_db()
+
+
+@job('low')
+def compare_db_trig(user, src_db, dst_db, compare_db):
+    any_db(user, src_db, dst_db, compare_db).cdata_trig()
 
 
 @job('low')
