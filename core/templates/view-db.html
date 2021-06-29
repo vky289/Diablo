@@ -16,48 +16,62 @@
         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addDBDialog">Add New</button>
       </div>
       <div class="card-body">
-        <table class="table table-striped">
+        <table class="table"
+               data-toolbar="#toolbar"
+               data-toggle="table"
+               data-search="true"
+               data-click-to-select="true"
+               data-show-refresh="true"
+               data-detail-view="true"
+               data-show-footer="true"
+               data-show-columns="false"
+               data-detail-formatter="detailFormatter"
+               data-url="{% url 'api:dbinstance-list' %}?format=json"
+               data-response-handler="responseHandler">
+        <thead>
           <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Host</th>
-            <th scope="col">Port</th>
-            <th scope="col">Username</th>
-            <th scope="col">Password</th>
-            <th scope="col">SID</th>
-            <th scope="col">Service</th>
-            <th scope="col">Type</th>
+            <th data-field="name" scope="col">Name</th>
+            <th data-field="host" scope="col">Host</th>
+            <th data-field="port" scope="col">Port</th>
+            <th data-field="username" scope="col">Username</th>
+            <th data-field="password" scope="col">Password</th>
+            <th data-field="sid" scope="col">SID</th>
+            <th data-field="service" scope="col">Service</th>
+            <th data-field="type" scope="col">Type</th>
+            <th data-field="id" data-formatter="operationFormatter" scope="col">Action</th>
           </tr>
-          {% for db_in in dbinstance_list %}
-          <tr>
-            <td>
-                <button type="button" class="btn btn-social btn-outline-danger"
-                        data-toggle="modal"
-                        data-remote="{% url 'dbs:db_edit_details' db_in.id%}"
-                        data-target="#dbDetailsModal">{{ db_in.name }}</button>
-            </td>
-            <td>{{ db_in.host }}</td>
-            <td>{{ db_in.port }}</td>
-            <td>{{ db_in.username }}</td>
-            <td>{{ db_in.password }}</td>
-            <td>
-              {% if db_in.sid %}
-                {{ db_in.sid }}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td>
-              {% if db_in.service %}
-              {{ db_in.service }}
-              {% else %}
-              -
-              {% endif %}
-            </td>
-            <td>
-              <img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">
-            </td>
-          </tr>
-          {% endfor %}
+        </thead>
+<!--          {% for db_in in dbinstance_list %}-->
+<!--          <tr>-->
+<!--            <td>-->
+<!--                <button type="button" class="btn btn-social btn-outline-danger"-->
+<!--                        data-toggle="modal"-->
+<!--                        data-remote="{% url 'dbs:db_edit_details' db_in.id%}"-->
+<!--                        data-target="#dbDetailsModal">{{ db_in.name }}</button>-->
+<!--            </td>-->
+<!--            <td>{{ db_in.host }}</td>-->
+<!--            <td>{{ db_in.port }}</td>-->
+<!--            <td>{{ db_in.username }}</td>-->
+<!--            <td>{{ db_in.password }}</td>-->
+<!--            <td>-->
+<!--              {% if db_in.sid %}-->
+<!--                {{ db_in.sid }}-->
+<!--              {% else %}-->
+<!--                - -->
+<!--              {% endif %}-->
+<!--            </td>-->
+<!--            <td>-->
+<!--              {% if db_in.service %}-->
+<!--              {{ db_in.service }}-->
+<!--              {% else %}-->
+<!--              - -->
+<!--              {% endif %}-->
+<!--            </td>-->
+<!--            <td>-->
+<!--              <img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">-->
+<!--            </td>-->
+<!--          </tr>-->
+<!--          {% endfor %}-->
         </table>
       </div>
     </div>
@@ -178,6 +192,79 @@
       });
 
     });
+  });
+</script>
+<script>
+  var $table = $('#table')
+
+  function responseHandler(res) {
+    var flatArray = [];
+    $.each(res.results, function(i, element) {
+      flatArray.push(element);
+    });
+    load(flatArray)
+    return flatArray;
+  }
+
+  function load(flatArray){
+    $('#table').bootstrapTable("load", flatArray);
+  }
+
+  function detailFormatter(index, row) {
+    var html = []
+    $.each(row, function (key, value) {
+      if(typeof value === "string" || typeof value === "boolean" || value === parseInt(value, 10)) {
+        html.push('<p><b>' + key + ':</b> ' + value + '</p>')
+      }
+    })
+    return html.join('')
+  }
+
+  function operationFormatter(value, row, index) {
+    var url_mask = "{% url 'dbs:db_edit_details' pk=999999 %}".replace(/999999/, row.id)
+    return [
+      '<div class="nbsp">' +
+      '<p align="center">',
+      '{% csrf_token %}',
+      '<button id="btn-edit" type="button" value="' + ''
+      + row.id +
+      '" class="btn btn-icon btn-info" title="Edit" ' +
+      'data-toggle="modal" data-remote="' + url_mask + '"',
+      'data-target="#dbDetailsModal">',
+      '<i class="fa fa-edit" aria-hidden="true"></i>',
+      '</button>',
+      '<button id="btn-trash" type="button" value="' + ''
+      + row.id +
+      '" class="btn btn-icon btn-danger" title="Truncate PG table">' +
+      '<i class="fa fa-trash" aria-hidden="true"></i>',
+      '</button>',
+      '</p>',
+      '</div>'
+    ].join('')
+  }
+</script>
+
+<script type="text/javascript">
+  $(document).on('click', '#btn-trash', function(e){
+    e.preventDefault();
+    var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+    var bt_val = $(this).val().split('::');
+    $.ajax({
+             type: "PUT",
+             headers:{"X-CSRFToken": $crf_token},
+             xhrFields: {
+               withCredentials: true
+             },
+             url: "/api/v1/dbInstanceAction/delete?id=" + bt_val[0],
+             data: {
+             },
+             success: function (result) {
+               alert('Delete initiated!! for ID ' + bt_val[0]);
+             },
+             error: function (result) {
+               alert('Something went wrong! contact admin!');
+             }
+           });
   });
 </script>
 {% endblock javascripts %}

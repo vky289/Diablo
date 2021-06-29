@@ -1,21 +1,16 @@
-import json
-
-from django.core import serializers
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets, generics
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
 from django_rq import get_queue
 
 from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare
 from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
 from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
 from utils.enums import DBObject
-from rest_framework.decorators import action
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
-    compare_db_fk, compare_db_trig, compare_db_ind
+    compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data
 
 
 class DBInstanceListSet(viewsets.ModelViewSet):
@@ -158,6 +153,25 @@ class DBFKListSet(viewsets.ModelViewSet):
             return self.queryset.filter(compare_dbs=DBCompare.objects.get(src_db=src_db, dst_db = dst_db)).order_by("const_name")
         else:
             return self.queryset.order_by("const_name")
+
+
+class DBInstanceActionView(generics.RetrieveUpdateAPIView):
+    serializer_class = DBInstanceSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    queryset = DBTableCompare.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return render(request, "page-405.html", status=405)
+
+    def pre_save(self, request, *args, **kwargs):
+        pass
+
+    def put(self, request, *args, **kwargs):
+        id = self.request.query_params.get('id')
+        action = self.kwargs.get('action')
+        if action == 'delete':
+            delete_instance_n_its_data.delay(id)
+            return JsonResponse(data={'SuccessMessage': 'Delete initiated!!'})
 
 
 class DBTableActionView(generics.RetrieveUpdateAPIView):

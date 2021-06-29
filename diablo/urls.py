@@ -22,7 +22,7 @@ from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
-from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView
+from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView, DBInstanceActionView
 from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet
 
 
@@ -54,6 +54,7 @@ urlpatterns = [
     path(r'dbs/', include('app.dbs.urls'), name='dbs'),
     # Rest API's
     path(r'api/v1/', include((router.urls, 'diablo'), namespace='api')),
+    path(r'api/v1/dbInstanceAction/<slug:action>', DBInstanceActionView.as_view(), name="dbInstanceAction"),
     path(r'api/v1/dbTableAction/<slug:action>', DBTableActionView.as_view(), name="dbTableAction"),
     path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
