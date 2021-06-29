@@ -249,22 +249,23 @@
     e.preventDefault();
     var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
     var bt_val = $(this).val().split('::');
-    $.ajax({
-             type: "PUT",
-             headers:{"X-CSRFToken": $crf_token},
-             xhrFields: {
-               withCredentials: true
-             },
-             url: "/api/v1/dbInstanceAction/delete?id=" + bt_val[0],
-             data: {
-             },
-             success: function (result) {
-               alert('Delete initiated!! for ID ' + bt_val[0]);
-             },
-             error: function (result) {
-               alert('Something went wrong! contact admin!');
-             }
-           });
+    if(confirm("Are you sure?")) {
+      $.ajax({
+               type: "PUT",
+               headers: {"X-CSRFToken": $crf_token},
+               xhrFields: {
+                 withCredentials: true
+               },
+               url: "/api/v1/dbInstanceAction/delete?id=" + bt_val[0],
+               data: {},
+               success: function (result) {
+                 alert('Delete initiated!! for ID ' + bt_val[0]);
+               },
+               error: function (result) {
+                 alert('Something went wrong! contact admin!');
+               }
+             });
+    }
   });
 </script>
 {% endblock javascripts %}
