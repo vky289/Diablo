@@ -1,6 +1,5 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.views import View
-from django.views.generic import RedirectView, DetailView, TemplateView, ListView
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.views.generic import ListView
 from django.contrib import messages
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind
@@ -8,18 +7,10 @@ from diablo.tasks import delete_instance_n_its_data
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django_rq import get_queue
-from django.http import JsonResponse
-import json as simplejson
-from django.core.serializers.json import DjangoJSONEncoder
-from django.shortcuts import render
-from django.forms.models import model_to_dict
 
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
-from utils.enums import DbType, DBObject
+from utils.enums import DbType
 from utils.enable_disable_triggers import triggers
-from utils.compare_database import any_db
-from utils.truncate_table import delete
-from utils.copy_table import xerox
 
 
 add_instance = 'dbs.view_dbinstance'

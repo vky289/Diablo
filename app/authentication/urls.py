@@ -6,6 +6,7 @@ from app.core.views.common_views import index
 app_name = 'auth'
 urlpatterns = [
     path(r'', index, name='home'),
+    path(r'accounts/login/', login_view, name='login'),
     path(r'login/', login_view, name='login'),
     path(r'register/', register_user, name='register'),
     path(r'logout/', LogoutView.as_view(), name='logout'),
