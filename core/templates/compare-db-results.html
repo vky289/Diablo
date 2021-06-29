@@ -46,7 +46,7 @@
                     </p>
                 </div>
                 {% if last_update is not None %}
-                <p class="float-right"> <h4><b>Last Compared: {{ last_update|print_timestamp }}</b></h4></p>
+                <p class="float-right"> <h4><strong>Last Compared: {{ last_update|print_timestamp }}</strong></h4></p>
                 {% endif %}
                 <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
                     <a href="{% url 'dbs:compare_db_results' id1 id2 %}">
@@ -116,9 +116,10 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbtablecompare-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>Table Comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-field="table_name" data-sortable="true" scope="col">Table Name</th>
+                                    <th data-field="table_name" data-formatter="extraInfoFormatter" data-sortable="true" scope="col">Table Name</th>
                                     <th data-field="src_row_count" data-sortable="true"
                                         data-footer-formatter="footerSrcFormatter" scope="col">Src # <img
                                             src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -148,6 +149,7 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbView-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>View comparison</caption>
                             <thead>
                                 <tr>
                                     <th data-field="table_name" data-sortable="true"
@@ -180,10 +182,11 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbInd-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>Index comparison</caption>
                             <thead>
                             <tr>
                                 <th data-field="table_name" data-sortable="true"
-                                    scope="col">View Name</th>
+                                    scope="col">Index Name</th>
                                 <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                     data-footer-formatter="footerSrcFormatter" scope="col">Src <img
                                         src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -212,6 +215,7 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbSeq-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>Sequence comparison</caption>
                             <thead>
                                 <tr>
                                     <th data-field="table_name" data-sortable="true" scope="col">Sequence Name</th>
@@ -243,9 +247,10 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbTrig-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>Trigger comparison</caption>
                             <thead>
                             <tr>
-                                <th data-field="table_name" data-sortable="true" scope="col">Sequence Name</th>
+                                <th data-field="table_name" data-sortable="true" scope="col">Trigger Name</th>
                                 <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                     data-footer-formatter="footerSrcFormatter" scope="col">Src <img
                                         src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -274,6 +279,7 @@
                                data-page-size="25"
                                data-url="{% url 'api:dbobjectfkcompare-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
                                data-response-handler="responseHandler">
+                            <caption>FK comparison</caption>
                             <thead>
                                 <tr>
                                     <th data-field="const_name" data-sortable="true" scope="col">Constraint Name</th>
@@ -437,6 +443,35 @@
                 html.push('<p><b>' + key + ':</b> ' + value + '</p>')
             }
         })
+        return html.join('')
+    }
+
+    function extraInfoFormatter(value, row, index) {
+        var html = []
+        if(typeof(value) != undefined) {
+            var url_mask =
+                "{% url 'dbs:compare_data_types' id1=999999999 id2=666666666 table_name='DUMMY' %}"
+                    .replace('999999999', row.compare_dbs.src_db.id)
+                    .replace('666666666', row.compare_dbs.dst_db.id)
+                    .replace('DUMMY', value);
+
+            var isGeom = row.geom;
+            var isMismatchCol = row.mismatch_in_cols_count;
+            var isMismatchRow = parseInt(row.src_row_count, 10) !== parseInt(row.dst_row_count, 10);
+            html.push('<p><button type="button" class="btn btn-secondary" '
+                      + '  data-toggle="modal" data-remote="' + url_mask
+                      + '" data-target="#dataTypeCompareModal">' + value + '</button> ')
+            if (isGeom) {
+                html.push('<i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i> ')
+            }
+            if (isMismatchRow) {
+                html.push('<i class="fa fa-times" style="color: red;" title="Row count mis-match"></i> ')
+            }
+            if (isMismatchCol) {
+                html.push('<i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i> ')
+            }
+            html.push('</p>')
+        }
         return html.join('')
     }
 

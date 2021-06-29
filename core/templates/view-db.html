@@ -28,50 +28,20 @@
                data-detail-formatter="detailFormatter"
                data-url="{% url 'api:dbinstance-list' %}?format=json"
                data-response-handler="responseHandler">
-        <thead>
-          <tr>
-            <th data-field="name" scope="col">Name</th>
-            <th data-field="host" scope="col">Host</th>
-            <th data-field="port" scope="col">Port</th>
-            <th data-field="username" scope="col">Username</th>
-            <th data-field="password" scope="col">Password</th>
-            <th data-field="sid" scope="col">SID</th>
-            <th data-field="service" scope="col">Service</th>
-            <th data-field="type" scope="col">Type</th>
-            <th data-field="id" data-formatter="operationFormatter" scope="col">Action</th>
-          </tr>
-        </thead>
-<!--          {% for db_in in dbinstance_list %}-->
-<!--          <tr>-->
-<!--            <td>-->
-<!--                <button type="button" class="btn btn-social btn-outline-danger"-->
-<!--                        data-toggle="modal"-->
-<!--                        data-remote="{% url 'dbs:db_edit_details' db_in.id%}"-->
-<!--                        data-target="#dbDetailsModal">{{ db_in.name }}</button>-->
-<!--            </td>-->
-<!--            <td>{{ db_in.host }}</td>-->
-<!--            <td>{{ db_in.port }}</td>-->
-<!--            <td>{{ db_in.username }}</td>-->
-<!--            <td>{{ db_in.password }}</td>-->
-<!--            <td>-->
-<!--              {% if db_in.sid %}-->
-<!--                {{ db_in.sid }}-->
-<!--              {% else %}-->
-<!--                - -->
-<!--              {% endif %}-->
-<!--            </td>-->
-<!--            <td>-->
-<!--              {% if db_in.service %}-->
-<!--              {{ db_in.service }}-->
-<!--              {% else %}-->
-<!--              - -->
-<!--              {% endif %}-->
-<!--            </td>-->
-<!--            <td>-->
-<!--              <img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">-->
-<!--            </td>-->
-<!--          </tr>-->
-<!--          {% endfor %}-->
+          <caption>Instance Details</caption>
+          <thead>
+            <tr>
+              <th data-field="name" scope="col">Name</th>
+              <th data-field="host" scope="col">Host</th>
+              <th data-field="port" scope="col">Port</th>
+              <th data-field="username" scope="col">Username</th>
+              <th data-field="password" scope="col">Password</th>
+              <th data-field="sid" scope="col">SID</th>
+              <th data-field="service" scope="col">Service</th>
+              <th data-field="type" scope="col">Type</th>
+              <th data-field="id" data-formatter="operationFormatter" scope="col">Action</th>
+            </tr>
+          </thead>
         </table>
       </div>
     </div>
