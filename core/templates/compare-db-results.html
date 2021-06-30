@@ -119,7 +119,8 @@
                             <caption>Table Comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-field="table_name" data-formatter="extraInfoFormatter" data-sortable="true" scope="col">Table Name</th>
+                                    <th data-field="table_name" data-sortable="true" scope="col">Table Name</th>
+                                    <th data-field="table_name" data-formatter="extraInfoFormatter" scope="col">Feedback</th>
                                     <th data-field="src_row_count" data-sortable="true"
                                         data-footer-formatter="footerSrcFormatter" scope="col">Src # <img
                                             src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -458,9 +459,7 @@
             var isGeom = row.geom;
             var isMismatchCol = row.mismatch_in_cols_count;
             var isMismatchRow = parseInt(row.src_row_count, 10) !== parseInt(row.dst_row_count, 10);
-            html.push('<p><button type="button" class="btn btn-secondary" '
-                      + '  data-toggle="modal" data-remote="' + url_mask
-                      + '" data-target="#dataTypeCompareModal">' + value + '</button> ')
+            html.push('<p align="center">')
             if (isGeom) {
                 html.push('<i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i> ')
             }
@@ -468,7 +467,13 @@
                 html.push('<i class="fa fa-times" style="color: red;" title="Row count mis-match"></i> ')
             }
             if (isMismatchCol) {
-                html.push('<i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i> ')
+                html.push('<a " '
+                          + '  data-toggle="modal" data-remote="' + url_mask
+                          + '" data-target="#dataTypeCompareModal">' +
+                          '<i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i></a>')
+            }
+            if(!isGeom && !isMismatchRow && !isMismatchCol){
+                html.push('-')
             }
             html.push('</p>')
         }
