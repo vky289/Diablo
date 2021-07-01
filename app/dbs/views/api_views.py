@@ -8,7 +8,8 @@ from django_rq import get_queue
 from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare
 from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
 from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
-from utils.enums import DBObject
+from utils.enums import DBObject, DbType
+from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data
 
@@ -172,6 +173,25 @@ class DBInstanceActionView(generics.RetrieveUpdateAPIView):
         if action == 'delete':
             delete_instance_n_its_data.delay(id)
             return JsonResponse(data={'SuccessMessage': 'Delete initiated!!'})
+        elif action == 'pingDB':
+            result = None
+            status = -1
+            obj = DBInstance
+            obj.host = self.request.data.get('host')
+            obj.port = self.request.data.get('port')
+            obj.username = self.request.data.get('username')
+            obj.password = self.request.data.get('password')
+            obj.sid = self.request.data.get('sid')
+            obj.service = self.request.data.get('service')
+            if self.request.data.get('type') == DbType.ORACLE:
+                result, status = oracle_db(obj).ping_db()
+            if self.request.data.get('type') == DbType.POSTGRES:
+                result, status = postgres_db(obj).ping_db()
+            if result is not None and status == 0:
+                data = {'SuccessMessage': 'Succeeded! ' + str(result)}
+            else:
+                data = {'errorMessage': 'Failed! ' + str(result)}
+            return JsonResponse(data)
 
 
 class DBTableActionView(generics.RetrieveUpdateAPIView):

@@ -1,3 +1,5 @@
+O_PING_DB = '''SELECT BANNER_FULL FROM v$version'''
+P_PING_DB = '''SELECT version()'''
 O_RET_TABLE_ROW_QUERY = '''SELECT * FROM (SELECT aabc.*, row_number() over (order by :PK_COL) as row_num FROM {TAB} aabc ORDER BY :PK_COL) 
         WHERE 
         row_num BETWEEN :LOWER_BOUND AND 

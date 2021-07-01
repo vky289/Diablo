@@ -11,6 +11,7 @@ from django_rq import get_queue
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
 from utils.enums import DbType
 from utils.enable_disable_triggers import triggers
+from utils.db_connection import oracle_db, postgres_db
 
 
 add_instance = 'dbs.view_dbinstance'
@@ -28,7 +29,7 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
         context['segment'] = 'view-db'
         return context
 
-    def save_db_details(self, obj, request):
+    def create_db_object(self, obj, request):
         obj.host = request.POST.get('host')
         obj.name = request.POST.get('name')
         obj.port = request.POST.get('port')
@@ -37,24 +38,39 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
         obj.sid = request.POST.get('sid')
         obj.service = request.POST.get('service')
         obj.type = request.POST.get('type')
-        obj.save()
+        return obj
 
 
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             if request.user.has_perm('dbs.add_dbinstance'):
+                result, status = None, None
                 if self.request.POST.get('saveDB'):
                     obj = DBInstance()
-                    self.save_db_details(obj, request)
-                    messages.info(request, f'DB Connections Successfully saved!')
+                    obj = self.create_db_object(obj, request)
+                    if obj.type == DbType.ORACLE:
+                        result, status = oracle_db(obj).ping_db()
+                    if obj.type == DbType.POSTGRES:
+                        result, status = postgres_db(obj).ping_db()
+                    if status == 0:
+                        messages.info(request, f'DB Connections Successfully saved! ' + str(result))
+                    else:
+                        messages.error(request, f'Check DB Settings! ' + str(result))
                 if request.user.has_perm('dbs.change_dbinstance'):
                     if self.request.POST.get('editDB'):
                         obj = DBInstance.objects.get(id=self.request.POST.get('id'))
-                        self.save_db_details(obj, request)
-                        messages.info(request, f'DB Connections Updated saved!')
+                        obj = self.create_db_object(obj, request)
+                        if obj.type == DbType.ORACLE:
+                            result, status = oracle_db(obj).ping_db()
+                        if obj.type == DbType.POSTGRES:
+                            result, status = postgres_db(obj).ping_db()
+                        if status == 0:
+                            messages.info(request, f'DB Connections Updated saved! ' + str(result))
+                        else:
+                            messages.error(request, f'Check DB Settings! ' + str(result))
                     if self.request.POST.get('delete'):
                         delete_instance_n_its_data.delay(self.request.POST.get('id'))
-                        messages.info(request, f'Delete initiated!!')
+                        messages.error(request, f'Delete initiated!!')
                 else:
                     messages.info(request, 'You don\'t have permission to modify/delete DB details!!')
             else:

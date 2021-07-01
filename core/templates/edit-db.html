@@ -4,7 +4,7 @@
         <h5 class="title">Edit Details</h5>
     </div>
     <div class="card-body">
-        <form action="#" method="post">
+        <form action="#" method="post" id="editForm">
             <div class="form-group">
                 {% csrf_token %}
                 <div class="row justify-content-center w-100">
@@ -15,31 +15,31 @@
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ db_instance.name }}">
+                            <input type="text" name="name" class="form-control" value="{{ db_instance.name }}" required="required">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Host</label>
-                            <input type="text" name="host" class="form-control" value="{{ db_instance.host }}">
+                            <input type="text" name="host" class="form-control" value="{{ db_instance.host }}" required="required">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Port</label>
-                            <input type="number" name="port" class="form-control" value="{{ db_instance.port }}">
+                            <input type="number" name="port" class="form-control" value="{{ db_instance.port }}" required="required">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Username</label>
-                            <input type="text" name="username" class="form-control" value="{{ db_instance.username }}">
+                            <input type="text" name="username" class="form-control" value="{{ db_instance.username }}" required="required">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Password</label>
-                            <input type="text" name="password" class="form-control" value="{{ db_instance.password }}">
-                        </div>
-                        <div class="form-group">
-                            <label class="col-mod-4">SID</label>
-                            <input type="text" name="sid" class="form-control" value="{{ db_instance.sid }}">
+                            <input type="text" name="password" class="form-control" value="{{ db_instance.password }}" required="required">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4">Service</label>
-                            <input type="text" name="service" class="form-control" value="{{ db_instance.service }}">
+                            <input type="text" id= "sService1" name="service" class="form-control" value="{{ db_instance.service }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-mod-4">SID</label>
+                            <input type="text" id= "sSid1" name="sid" class="form-control" value="{{ db_instance.sid }}">
                         </div>
                         <div class="form-group">
                             <label class="col-mod-4" for="inlineFormCustomSelect">Type</label>
@@ -56,7 +56,32 @@
                     </div>
                 </div>
             </div>
+            <button class="btn btn-warning" type="button" id="btn-pingDB" name="pingDB">Test Connection</button>
             <button class="btn btn-info" type="submit" name="editDB" value="editDB">Save</button>
         </form>
     </div>
 </div>
+<script type="text/javascript">
+    $(document).ready(function(){
+        if($('#sService1').val().length)
+            $('#sSid1').prop('disabled', true);
+        else
+            $('#sSid1').prop('disabled', false);
+        if($('#sSid1').val().length)
+            $('#sService1').prop('disabled', true);
+        else
+            $('#sService1').prop('disabled', false);
+    });
+    $('#sService1').on('input', function() {
+        if($(this).val().length)
+            $('#sSid1').prop('disabled', true);
+        else
+            $('#sSid1').prop('disabled', false);
+    });
+    $('#sSid1').on('input', function() {
+        if($(this).val().length)
+            $('#sService1').prop('disabled', true);
+        else
+            $('#sService1').prop('disabled', false);
+    });
+</script>

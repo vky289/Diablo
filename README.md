@@ -4,88 +4,53 @@ Also facilitate transfer data from one to another(currently only Oracle -> Postg
 This tool is using redis server to process the transactions. More the worker, much faster the jobs will be completed.
 ### Few Highlights ###
 1. Transfer data (GEOM not yet)
-2. Compare two database for row counts
+2. Compare two database for database objects
 3. Truncate content of specific table
 4. Enable Triggers
 5. Disable Triggers
 ## Summary ##
 
 ## Setup / Installation ##
-### Stage 1 | DEV env ###
-1. If your MacOSX missing Homebrew
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+### Stage | Local Development env ###
+1. Make sure your docker is up and running :)
+2. Run docker-compose.yml file `docker-compose up -d` - This will create respective DB as containers.
+3. Use `docker ps -a ` to identify the container name/port
+4. Edit config/.env file with your postgres port and make sure to change the host to localhost otherwise you need to map the container name to 
+   localhost in `/etc/hosts`
+#### Setup - Alternative 1 ####
 ```
-2. Download and install latest version of Python [Download](https://www.python.org/downloads/)
-```bash
-brew install python
+# config/.env
+DATABASE_URL=psql://diablo:diablo@localhost:5432/diablo
+
+REDIS_HOST=localhost
 ```
-3. Clone Diablo repository
-4. Open project in IntelliJ
-5. Navigate to the directory in command line and create a virtual environment 
-```bash
-python3 -m venv venv
+#### Setup - Alternative 2 ####
 ```
-P.S: venv is our virtual env
-4. Activate virtual env
-```bash
-source venv/bin/activate
+/etc/hosts
+
+127.0.0.1 diablo-db diablo-redis
 ```
-5. Verify your python
-```bash
-which python
+### Stage | Local Testing env ###
+1. Make sure your docker is up and running :)
+2. Run docker-compose-full-stack.yml file `docker-compose -f docker-compose-full-stack.yml up -d`
+3. Boom! wait for the process to complete. Totally 8 container will be created. All of them needed for the application to run
+4. Use `docker ps -a` to check the status. All the containers have health check integrated. Within a couple of minutes, it should 
+   become health. if not follow the container logs.
+5. Once diablo-web turns health. You can access application via browser 
+`http://localhost:8480`
 ```
-you should see something like ../../extractor/ext/bin/python 
-6. Install required modules
-```bash
-pip install -r requirement.txt
+Username : admin
+password: admin
 ```
-7. Run docker-compose.yml file with Postgres DB `docker-compose up -d` or via docker UI
 
 ### Stage 2 | Initial Configuration ###
-1. Copy *config/.env* file from the config/.env.template, populate the data.
-   Set DEBUG, SECRET_KEY - can be generated for django, DATABASE_URL - parameters can be taken from docker-compose file
-   For more details visit [Django environ docs](https://django-environ.readthedocs.io/en/latest/)
+1. Use above credentials to login
+2. Navigate to View DB tab
+3. Click Add New to add new db connections
+4. Fill any user friendly name and add your DB settings. Make sure to only SID or Service. Most of the Oracle DB will have SID and Service points 
+   to same PDB. For Postgres, it must be a service
 
-### Stage 3 | Service start ###
-1. Execute migration `python manage.py migrate`
-2. Create superadmin `python manage.py createsuperuser`
-3. Run applications `python manage.py runserver`
-
-[comment]: <> (### Application ###)
-
-[comment]: <> (1. Make sure to change the location&#40;setup_column_id.xml&#41; in settings.ini file)
-
-[comment]: <> (```bash)
-
-[comment]: <> (aa_standard_setup_cols=/path/to/directory/agileassetsweb-project/ams-configurer/src/main/resources/schema/AGILE_STANDARD/modules/2/setupData/SETUP_COLUMN_ID.xml)
-
-[comment]: <> (```)
-
-[comment]: <> (```bash)
-
-[comment]: <> (client_setup_cols=/path/to/directory/agileassetsweb-project/ams-configurer/src/main/resources/schema/ams_nyc/modules/17/setupData/SETUP_COLUMN_ID.xml)
-
-[comment]: <> (```)
-
-[comment]: <> (2. Change the output location)
-
-[comment]: <> (```bash)
-
-[comment]: <> (output_file=/path/to/directory/setup_columns.xlsx)
-
-[comment]: <> (```)
-
-
-### Settings ###
-Find all the program settings @ settings.ini
-
-## How to Execute ##
-1. After setting up the settings.ini
-```bash
-python extractor/.
-```
-2. On successful execution, you should see the output file(setup_columns.xlsx) in output_file firectory 
+#### Note: Application must have at-least one oracle and one postgres or 2 postgres settings to do any comparison ####
 
 # Author #
 [Vignesh Sellamuthu](mailto:vsellamuthu@agileassets.com)

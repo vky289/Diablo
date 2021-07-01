@@ -65,31 +65,31 @@
             <div class="col w-100">
               <div class="form-group">
                 <label class="col-mod-4">Name</label>
-                <input type="text" name="name" class="form-control" value="">
+                <input type="text" name="name" class="form-control" value="" required="required">
               </div>
               <div class="form-group">
                 <label class="col-mod-4">Host</label>
-                <input type="text" name="host" class="form-control" value="">
+                <input type="text" name="host" class="form-control" value="" required="required">
               </div>
               <div class="form-group">
                 <label class="col-mod-4">Port</label>
-                <input type="number" name="port" class="form-control" value="">
+                <input type="number" name="port" class="form-control" value="" required="required">
               </div>
               <div class="form-group">
                 <label class="col-mod-4">Username</label>
-                <input type="text" name="username" class="form-control" value="">
+                <input type="text" name="username" class="form-control" value="" required="required">
               </div>
               <div class="form-group">
                 <label class="col-mod-4">Password</label>
-                <input type="text" name="password" class="form-control" value="">
-              </div>
-              <div class="form-group">
-                <label class="col-mod-4">SID</label>
-                <input type="text" name="sid" class="form-control" value="">
+                <input type="text" name="password" class="form-control" value="" required="required">
               </div>
               <div class="form-group">
                 <label class="col-mod-4">Service</label>
-                <input type="text" name="service" class="form-control" value="">
+                <input type="text" id= "sService" name="service" class="form-control" value="">
+              </div>
+              <div class="form-group">
+                <label class="col-mod-4">SID</label>
+                <input type="text" id= "sSid" name="sid" class="form-control" value="">
               </div>
               <div class="form-group">
                 <label class="col-mod-4" for="inlineFormCustomSelect">Type</label>
@@ -104,6 +104,7 @@
         </div>
         <div class="modal-footer">
           <button type="submit" name="saveDB" value="saveDB" class="btn btn-info">Save changes</button>
+          <button type="button" id="btn-pingDB" name="pingDB" value="pingDB" class="btn warning">Test Connection</button>
           <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
         </div>
       </form>
@@ -236,6 +237,46 @@
                }
              });
     }
+  });
+  $(document).on('click', '#btn-pingDB', function(e){
+    e.preventDefault();
+    var $form = $(this).closest('form');
+    var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+    var bt_val = $(this).val().split('::');
+    $.ajax({
+             type: "PUT",
+             headers: {"X-CSRFToken": $crf_token},
+             xhrFields: {
+               withCredentials: true
+             },
+             url: "/api/v1/dbInstanceAction/pingDB",
+             data: $form.serialize(),
+             dataType: 'json',
+             success: function (result) {
+               var message = result.SuccessMessage
+               if(typeof message === 'undefined'){
+                 message = result.errorMessage
+               }
+               alert(message);
+             },
+             error: function (result) {
+               alert('Something went wrong! contact admin!');
+             }
+           });
+  });
+</script>
+<script type="text/javascript">
+  $('#sService,#sService1').on('input', function() {
+    if($(this).val().length)
+      $('#sSid,#sSid1').prop('disabled', true);
+    else
+      $('#sSid,#sSid1').prop('disabled', false);
+  });
+  $('#sSid,#sSid1').on('input', function() {
+    if($(this).val().length)
+      $('#sService,#sService1').prop('disabled', true);
+    else
+      $('#sService,#sService1').prop('disabled', false);
   });
 </script>
 {% endblock javascripts %}

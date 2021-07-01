@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: diablo
       POSTGRES_DB: diablo
     ports:
-      - 6432:5432
+      - 5432:5432
     volumes:
       - ./volumes:/var/lib/postgresql/data:cached
     healthcheck:
