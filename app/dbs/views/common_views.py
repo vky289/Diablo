@@ -35,8 +35,8 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
         obj.port = request.POST.get('port')
         obj.username = request.POST.get('username')
         obj.password = request.POST.get('password')
-        obj.sid = request.POST.get('sid')
-        obj.service = request.POST.get('service')
+        obj.sid = '' if request.POST.get('sid') is None else request.POST.get('sid')
+        obj.service = '' if request.POST.get('service') is None else request.POST.get('service')
         obj.type = request.POST.get('type')
         return obj
 
