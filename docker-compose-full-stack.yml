@@ -24,7 +24,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./volumes:/var/lib/postgresql/data:cached
+      - ./volumes:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-d", "diablo", "-U", "diablo" ]
       interval: 10s
