@@ -1,0 +1,27 @@
+version: '3.6'
+services:
+  django_rq_worker_default:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_default
+    command: python manage.py rqworker default
+  django_rq_worker_high:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_1
+    command: python manage.py rqworker high
+  django_rq_worker_high_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_2
+    command: python manage.py rqworker high
+  django_rq_worker_low:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_1
+    command: python manage.py rqworker low
+  django_rq_worker_low_2:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_2
+    command: python manage.py rqworker low

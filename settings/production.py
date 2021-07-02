@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'notifications',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_yasg',
 
     #inner app
     'app',

@@ -6,13 +6,9 @@ django-notifications-hq==1.6.0
 django-enumchoicefield==2.0.0
 django-environ==0.4.5
 django-rq==2.4.1
+drf-yasg==1.20.0
 redis==3.5.3
 configparser==5.0.2
-xlsxwriter==1.4.0
 psycopg2-binary==2.8.6
 cx_Oracle==8.1.0
 lxml==4.6.3
-bson==0.5.10
-alive_progress==1.6.2
-tqdm==4.60.0
-telegram-send==0.25
