@@ -53,6 +53,7 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
                     if obj.type == DbType.POSTGRES:
                         result, status = postgres_db(obj).ping_db()
                     if status == 0:
+                        obj.save()
                         messages.info(request, f'DB Connections Successfully saved! ' + str(result))
                     else:
                         messages.error(request, f'Check DB Settings! ' + str(result))
@@ -65,6 +66,7 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
                         if obj.type == DbType.POSTGRES:
                             result, status = postgres_db(obj).ping_db()
                         if status == 0:
+                            obj.save()
                             messages.info(request, f'DB Connections Updated saved! ' + str(result))
                         else:
                             messages.error(request, f'Check DB Settings! ' + str(result))
