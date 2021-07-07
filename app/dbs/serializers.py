@@ -38,7 +38,7 @@ class DBCompareSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = DBCompare
-        fields = ['url', 'id', 'src_db', 'dst_db', 'added_on']
+        fields = ['url', 'id', 'src_db', 'dst_db', 'last_compared', 'added_on']
 
 
 class DBTableCompareSerializer(serializers.HyperlinkedModelSerializer):

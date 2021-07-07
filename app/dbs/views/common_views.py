@@ -12,6 +12,7 @@ from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnC
 from utils.enums import DbType
 from utils.enable_disable_triggers import triggers
 from utils.db_connection import oracle_db, postgres_db
+from datetime import datetime
 
 
 add_instance = 'dbs.view_dbinstance'
@@ -109,16 +110,6 @@ class DbCompareDetailView(PermissionRequiredMixin, ListView):
         #context['db_instance_pg'] = context['db_instance_or']
         #context['db_instance_or'] = DBInstance.objects.filter(type='oracle').order_by('-host', 'name')
         context['db_instance_pg'] = DBInstance.objects.filter(type='postgres').order_by('-host', 'name')
-        context['compare_results'] = DBCompare.objects.values_list('src_db',
-                                                                   'dst_db'
-                                                                   ).distinct()
-        try:
-            compare_q = set()
-            for ll in context['compare_results']:
-                compare_q.add((DBInstance.objects.get(id=ll[0]), DBInstance.objects.get(id=ll[1]),))
-            context['compare_q'] = compare_q
-        except DBInstance.DoesNotExist:
-            pass
         context['segment'] = 'compare-db'
         return context
 
@@ -220,11 +211,14 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     compare_db = None
                     try:
                         ob = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
+                        ob.last_compared = datetime.now()
+                        ob.save()
                         compare_db = ob
                     except DBCompare.DoesNotExist:
                         compare_db = DBCompare()
                         compare_db.src_db = src_db
                         compare_db.dst_db = dst_db
+                        compare_db.last_compared = datetime.now()
                         compare_db.save()
 
                     queue = get_queue('high')

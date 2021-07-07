@@ -34,7 +34,7 @@ class DjangoRQDetailView(PermissionRequiredMixin, ListView):
         context['segment'] = 'queue'
         queue = Queue(connection=redis)
         context['pending_job'] = len(queue.job_ids)
-        context['current_queue'] = RQQueue.objects.all()
+        context['current_queue'] = RQQueue.objects.all().order_by('-ended_at')
         return context
 
     def store_job_date(self, q_j):

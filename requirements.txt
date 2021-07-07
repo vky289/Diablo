@@ -12,3 +12,5 @@ configparser==5.0.2
 psycopg2-binary==2.8.6
 cx_Oracle==8.1.0
 lxml==4.6.3
+rq~=1.8.1
+psycopg2~=2.8.6

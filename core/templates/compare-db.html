@@ -9,121 +9,146 @@
 {% block content %}
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-xl">
         <div class="card">
             <div class="card-header">
                 <h5 class="title">Compare</h5>
-                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#showResults">Show Results</button>
             </div>
             <div class="card-body">
                 <form action="{% url 'dbs:compare_db_res' %}" method="post">
                     {% csrf_token %}
-                    <table class="table table-striped col-md">
+                    <table class="table">
                         <tr>
-                            <th>Source</th>
-                            <th>Destination</th>
+                            Source
+                                <div class="form-group">
+                                    <select class="form-select" name="src_db" data-size="5" data-width="50%">
+                                    {% for db_in in db_instance_or %}
+                                        <option value="{{ db_in.id }}">
+                                            <span class='badge badge-secondary'>{{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                                ({{db_in.type}})</span>
+                                        </option>
+                                    {% endfor %}
+                                    </select>
+                                </div>
                         </tr>
                         <tr>
-                            <td>
-                                <div class="form-group">
-                                    {% for db_in in db_instance_or %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="src_db"
-                                                   id="sourceDB{{ db_in.id }}" value="{{ db_in.id }}">
-                                            <label class="form-check-label btn btn-outline-danger" for="sourceDB{{ db_in.id }}">
-                                                {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
-                                                (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-group">
-                                    {% for db_in in db_instance_pg %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="dst_db"
-                                                   id="destinationDB{{ db_in.id }}" value="{{ db_in.id }}">
-                                            <label class="form-check-label btn btn-outline-danger" for="destinationDB{{ db_in.id }}">
-                                                {{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
-                                                (<img src="{% static 'assets/img/' %}{{db_in.type}}.png" width="40" height="40" alt="{{db_in.type}}">)
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </td>
+                            Destination
+                            <div class="form-group">
+                                <select class="form-select" name="dst_db" data-size="5" data-width="50%">
+                                {% for db_in in db_instance_pg %}
+                                    <option value="{{ db_in.id }}">
+                                            <span class='badge badge-secondary'>{{ db_in.name }} - {{ db_in.username }} @ {{ db_in.host }} : {{ db_in.port }}
+                                                ({{db_in.type}})</span>
+                                    </option>
+                                {% endfor %}
+                                </select>
+                            </div>
                         </tr>
                     </table>
                     <div class="form-group">
                         <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare it!</button>
                     </div>
                 </form>
+                <div class="card-body">
+                    <table class="table"
+                           data-toolbar="#toolbar"
+                           data-toggle="table"
+                           data-search="true"
+                           data-show-refresh="true"
+                           data-show-columns="false"
+                           data-url="{% url 'api:dbcompare-list' %}?format=json"
+                           data-response-handler="responseHandler">
+                        <caption>Comparison Results</caption>
+                        <thead>
+                        <tr>
+                            <th data-field="src_db" data-sortable="true" data-formatter="extraInfoFormatter" scope="colgroup">Source</th>
+                            <th data-field="dst_db" data-sortable="true" data-formatter="extraInfoFormatter" scope="colgroup">Destination</th>
+                            <th data-sortable="true" data-formatter="extraInfoFormatter2" scope="col">Last Compared</th>
+                            <th data-field="src_db" data-formatter="operationFormatter" scope="col">Results</th>
+                        </tr>
+                        </thead>
+                    </table>
+            </div>
             </div>
         </div>
     </div>
 </div>
-
-<div class="modal fade" id="showResults" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-xl" role="document">
-        <div class="modal-content">
-            <div class="p-3 mb-2 bg-neutral text-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title text-info">Results</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="row justify-content-center w-100">
-                        <div class="col w-100">
-                            <table class="table table-striped col-md">
-                                <tr>
-                                    <th class="cols">Source DB</th>
-                                    <th class="cols">Destination DB</th>
-                                    <th class="cols">Results</th>
-                                </tr>
-                                {% for results in compare_q %}
-                                <tr>
-                                    <td>
-                                        <p class="text-darker">
-                                        {{ results.0.name }} - {{ results.0.username }} @ {{ results.0.host }} : {{results.0.port }}
-                                        ({% if results.0.type == 'oracle' %}
-                                        <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
-                                        {% else%}
-                                        <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
-                                        {%endif %})</p>
-                                    </td>
-                                    <td>
-                                        <p class="text-darker">
-                                        {{ results.1.name }} - {{ results.1.username }} @ {{ results.1.host }} : {{ results.1.port }}
-                                        ({% if results.1.type == 'oracle' %}
-                                        <img src="{% static 'assets/img/oracle.png' %}" width="40" height="40" alt="Oracle">
-                                        {% else%}
-                                        <img src="{% static 'assets/img/postgres.png' %}" width="40" height="40" alt="Postgres">
-                                        {%endif %})</p>
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'dbs:compare_db_results' id1=results.0.id id2=results.1.id %}" >
-                                            <button class="btn btn-info">Take me there</button>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
     
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
-{% block javascripts %}{% endblock javascripts %}
+{% block javascripts %}
+<script>
+    function responseHandler(res) {
+        var flatArray = [];
+        $.each(res.results, function(i, element) {
+            flatArray.push(element);
+        });
+        load(flatArray)
+        return flatArray;
+    }
+
+    function load(flatArray){
+        $('#table').bootstrapTable("load", flatArray);
+    }
+
+    function extraInfoFormatter(value, row, index) {
+        var html = []
+        if(typeof(value) != undefined) {
+            html.push('<p align="left">')
+            if (row) {
+                html.push(value.name + '-' + value.username + '@' + value.host + ' : ' + value.port)
+                html.push("(<img src={% static 'assets/img/' %}" + value.type + ".png width='40' height='40'>)")
+            }
+            html.push('</p>')
+        }
+        return html.join('')
+    }
+
+    function extraInfoFormatter2(value, row, index) {
+        var html = []
+        if(typeof(value) != undefined) {
+            html.push('<p align="center">')
+            if (row) {
+                html.push(row.last_compared)
+            }
+            html.push('</p>')
+        }
+        return html.join('')
+    }
+
+    function operationFormatter(value, row, index) {
+        var url_mask =
+            "{% url 'dbs:compare_db_results' id1=999999999 id2=666666666 %}"
+                .replace('999999999', row.src_db.id)
+                .replace('666666666', row.dst_db.id);
+        return [
+            '<p align="center">',
+            '{% csrf_token %}',
+            '<a href="' + url_mask + '" >',
+            '<button id="btn-results" type="button" value="" class="btn btn-icon btn-info" title="Results">',
+            '<i class="fa fa-registered" aria-hidden="true"></i>',
+            '</button>',
+            '</a>',
+            '</p>',
+        ].join('')
+    }
+
+    function detailFormatter(index, row) {
+        var html = []
+        $.each(row, function (key, value) {
+            if(typeof value === "string" || typeof value === "boolean" || value === parseInt(value, 10)) {
+                html.push('<p><b>' + key + ':</b> ' + value + '</p>')
+            }
+            if(typeof value === "object") {
+                html.push('<p><b> ' + key + '{ </b>')
+                $.each(value, function (key1, value1) {
+                    html.push('<p><b>' + key1 + ':</b> ' + value1 + '</p>')
+                });
+                html.push('} </p>')
+            }
+        });
+        return html.join('')
+    }
+</script>
+{% endblock javascripts %}

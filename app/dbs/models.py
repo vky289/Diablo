@@ -35,6 +35,7 @@ class DBCompare(models.Model):
     src_db = models.ForeignKey(DBInstance, on_delete=models.CASCADE, related_name='source_db')
     dst_db = models.ForeignKey(DBInstance, on_delete=models.CASCADE, related_name='destination_db')
     added_on = models.DateTimeField(auto_now_add=True, blank=True)
+    last_compared = models.DateTimeField(auto_now_add=True, blank=True)
 
     def __str__(self):
         return self.src_db.name + "-" + self.dst_db.name

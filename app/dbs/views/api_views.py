@@ -31,7 +31,7 @@ class DBCompareListSet(viewsets.ModelViewSet):
     http_method_names = ['get', ]
 
     def get_queryset(self):
-        return self.queryset.order_by("src_db", "dst_db")
+        return self.queryset.order_by("-last_compared", "src_db", "dst_db")
 
 
 class DBTableListSet(viewsets.ModelViewSet):
