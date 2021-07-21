@@ -2,6 +2,11 @@
 <div class="card">
     <div class="card-body">
         <table class="table table-striped">
+            {% if table_name %}
+            <tr>
+                <th colspan="3">Table : {{ table_name }}</th>
+            </tr>
+            {% endif %}
             <tr>
                 <th class="cols">Column Name</th>
                 {% if src_db_type %}

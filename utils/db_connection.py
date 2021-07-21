@@ -1,7 +1,7 @@
 import cx_Oracle
 import psycopg2
 import logging
-from utils.queries import O_PING_DB, P_PING_DB
+from utils.queries import O_PING_DB, O_PING_DB_2, P_PING_DB
 
 
 class postgres_db:
@@ -38,7 +38,7 @@ class postgres_db:
 
 
 class oracle_db:
-    #cx_Oracle.init_oracle_client(lib_dir='/Users/vsellamuthu/software/instantclient/')
+    cx_Oracle.init_oracle_client(lib_dir='/Users/vsellamuthu/software/instantclient/')
 
     def __init__(self, args1):
         self.conn = None
@@ -68,7 +68,10 @@ class oracle_db:
                 dsn_tns = str(self.params.get('host')) + ":" + str(self.params.get('port')) + '/' + str(self.params.get('service'))
             conn = cx_Oracle.connect(self.params.get('user'), self.params.get('password'), dsn_tns)
             cur = conn.cursor()
-            rows = cur.execute(O_PING_DB)
+            try:
+                rows = cur.execute(O_PING_DB)
+            except (Exception, psycopg2.DatabaseError) as e2:
+                rows = cur.execute(O_PING_DB_2)
             fetch_rows = rows.fetchall()
             if fetch_rows is not None:
                 return fetch_rows[0][0], 0

@@ -57,6 +57,7 @@ class DBTableCompare(models.Model):
     dst_row_count = models.IntegerField(null=True, default=0)
     mismatch_in_cols_count = models.BooleanField(default=False)
     geom = models.BooleanField(default=False)
+    module_id = models.BooleanField(default=False)
     added_on = models.DateTimeField(auto_now_add=True, blank=True)
 
     def __str__(self):

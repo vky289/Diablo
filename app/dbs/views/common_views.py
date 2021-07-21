@@ -144,6 +144,7 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
                     final_dict['dst_data_type'] = dst.datatype + '(' + dst.precision + ')'
             dd.append(final_dict)
         context['data_type_compare_res'] = dd
+        context['table_name'] = table_name
         context['src_db_type'] = DBInstance.objects.get(id=src_db).type
         context['dst_db_type'] = DBInstance.objects.get(id=dst_db).type
         context['segment'] = 'compare-db'

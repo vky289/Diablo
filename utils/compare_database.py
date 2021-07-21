@@ -64,6 +64,13 @@ class any_db:
                         oob.save()
                     except DBTableCompare.DoesNotExist:
                         pass
+                if l_c.get('column_name') == 'MODULE_ID':
+                    try:
+                        oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
+                        oob.module_id = True
+                        oob.save()
+                    except DBTableCompare.DoesNotExist:
+                        pass
                 obj.datatype = l_c.get('data_type')
                 obj.precision = l_c.get('precision')
                 obj.save()
@@ -117,6 +124,7 @@ class any_db:
                 obj.src_row_count = o_dict.get(o_r)
                 obj.dst_row_count = p_dict.get(o_r)
                 obj.geom = False
+                obj.module_id = False
                 obj.save()
 
             send_notification(self.user, "DB {} -> {} table comparison completed".format(self.src_db.name, self.dst_db.name))
