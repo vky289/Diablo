@@ -16,7 +16,7 @@ class RQQueue(models.Model):
 
 class SYSetting(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, blank=False)
+    name = models.CharField(max_length=100, blank=False, unique=True)
     value = models.CharField(max_length=1000, blank=False)
 
     def __str__(self):
