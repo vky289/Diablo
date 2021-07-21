@@ -38,7 +38,7 @@ class postgres_db:
 
 
 class oracle_db:
-    cx_Oracle.init_oracle_client(lib_dir='/Users/vsellamuthu/software/instantclient/')
+    #cx_Oracle.init_oracle_client(lib_dir='/Users/vsellamuthu/software/instantclient/')
 
     def __init__(self, args1):
         self.conn = None
