@@ -374,6 +374,53 @@
     });
 </script>
 <script type="text/javascript">
+    $(document).on('click', '#btn-compare-real-data', function(e){
+        e.preventDefault();
+        var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+        var bt_val = $(this).val().split('::');
+        $.ajax({
+                   type: "GET",
+                   headers:{"X-CSRFToken": $crf_token},
+                   xhrFields: {
+                       withCredentials: true,
+                       responseType: 'blob'
+                   },
+                   url: "/api/v1/dbTableAction/compareRawData?table_name=" + bt_val[0]
+                        + "&src_id="+ bt_val[1] + "&dst_id="+ bt_val[2] ,
+                   data: {
+                       unparsed_value: $(this).val()
+                   },
+                   success: function (result, status, xhr) {
+                       //Convert the Byte Data to BLOB object.
+                       var blob = new Blob([result], { type: "application/octetstream" });
+                       var filename = "";
+                       var disposition = xhr.getResponseHeader('Content-Disposition');
+                       if (disposition && disposition.indexOf('attachment') !== -1) {
+                           var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                           var matches = filenameRegex.exec(disposition);
+                           if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                       }
+                       //Check the Browser type and download the File.
+                       var isIE = false || !!document.documentMode;
+                       if (isIE) {
+                           window.navigator.msSaveBlob(blob, fileName);
+                       } else {
+                           var url = window.URL || window.webkitURL;
+                           link = url.createObjectURL(blob);
+                           var a = $("<a />");
+                           a.attr("download", filename);
+                           a.attr("href", link);
+                           $("body").append(a);
+                           a[0].click();
+                           $("body").remove(a);
+                       }
+                       alert('Compare data completed for the DB table ' + bt_val[0]);
+                   },
+                   error: function (result) {
+                       alert('Something went wrong! contact admin!');
+                   }
+               });
+    });
     $(document).on('click', '#btn-copy', function(e){
         e.preventDefault();
         var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
@@ -509,6 +556,11 @@
         return [
             '<p align="center">',
             '{% csrf_token %}',
+            '<button id="btn-compare-real-data" type="button" value="' + ''
+            + row.table_name + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
+            '" class="btn btn-icon btn-warning" title="Compare Data">',
+            '<i class="fas fa-anchor" aria-hidden="true"></i>',
+            '</button>',
             '<button id="btn-copy" type="button" value="' + ''
             + row.table_name + '::' + row.src_row_count + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
             '" class="btn btn-icon btn-info" title="Copy to PG">',

@@ -8,7 +8,9 @@ from utils.queries import O_ROW_COUNT, P_ROW_COUNT, O_COLUMN_NAMES, P_COLUMN_NAM
     O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q
 from utils.queries import O_FK_LIST, P_FK_LIST
 from utils.common_func import send_notification
-
+from utils.queries import O_RET_TABLE_ROW_QUERY, P_RET_TABLE_ROW_QUERY
+import json
+from collections import Counter
 
 class any_db:
     def __init__(self, user, src_db, dst_db, compare_db):
@@ -300,3 +302,83 @@ class any_db:
                 oob = DBTableCompare.objects.get(table_name=tt, compare_dbs=self.compare_db)
                 oob.mismatch_in_cols_count = True
                 oob.save()
+
+    def get_primary_key(self, table_name):
+        return scrapper(db_type=self.src_db_type,
+                        main_db=self.src_db).get_pk_of_table(table_name)
+
+    def get_unique_key(self, table_name, src_schema_name):
+        return scrapper(db_type=self.src_db_type,
+                        main_db=self.src_db).get_uk_of_table(table_name, src_schema_name)
+
+    def compare_real_data(self, table_name):
+        pk_col = self.get_primary_key(table_name=table_name)
+        if pk_col is None:
+            pk_col = self.get_unique_key(table_name=table_name, src_schema_name=self.src_db.username)
+        # if pk_col is None:
+        #     raise RuntimeError("No Primary Key/Unique key found. Cannot compare data!")
+
+        table_row_count = 0
+        table_row = None
+
+        try:
+            table_row = DBTableCompare.objects.get(compare_dbs=self.compare_db, table_name=table_name)
+            table_row_count = table_row.src_row_count
+        except DBTableCompare.DoesNotExist as e:
+            self.log.error(e)
+
+        o_data, o_col_names = scrapper(main_db=self.src_db).crawl_db(O_RET_TABLE_ROW_QUERY, table_name, int(table_row_count), pk_col)
+
+        p_data, p_col_names = scrapper(main_db=self.dst_db).crawl_db(P_RET_TABLE_ROW_QUERY, table_name, int(table_row_count), pk_col)
+
+        data = {}
+        res_dict = {}
+        data['rowCount'] = max(len(o_data), len(p_data))
+        data['columnCount'] = len(o_col_names)
+        data['tableName'] = table_name
+        o_data_only_pk = []
+        p_data_only_pk = []
+        o_data_only_ui = {}
+        p_data_only_ui = {}
+        if pk_col is not None and type(pk_col) is not set:
+            pk = o_col_names.index(pk_col)
+            o_data_only_pk = [item[pk] for item in o_data]
+            p_data_only_pk = [item[pk] for item in p_data]
+            data['primaryKeyCol'] = pk
+            data['primaryKeyFound'] = 'Yes'
+        elif pk_col is not None and type(pk_col) is set:
+            data['primaryKeyFound'] = 'No'
+            for item in o_data:
+                joined_col = ';~;'.join([item[o_col_names.index(p_col)] for p_col in pk_col])
+                for u in pk_col:
+                    ind = o_col_names.index(u)
+                    if o_data_only_ui.get(joined_col) is not None:
+                        o_data_only_ui[joined_col].update({u: item[ind]})
+                    else:
+                        o_data_only_ui[joined_col] = {u: item[ind]}
+            for item in p_data:
+                joined_col = ';~;'.join([item[p_col_names.index(p_col)] for p_col in pk_col])
+                for u in pk_col:
+                    ind = p_col_names.index(u)
+                    if p_data_only_ui.get(joined_col) is not None:
+                        p_data_only_ui[joined_col].update({u: item[ind]})
+                    else:
+                        p_data_only_ui[joined_col] = {u: item[ind]}
+            data['uniqueIndexKeyCol'] = ';~;'.join([p_col for p_col in pk_col])
+
+        if len(o_data_only_pk) > 0:
+            for o in o_data_only_pk:
+                if o not in p_data_only_pk:
+                    res_dict[o] = 'N/A'
+                else:
+                    res_dict[o] = 'Present'
+        if len(o_data_only_ui) > 0:
+            for o in o_data_only_ui:
+                if o not in p_data_only_ui:
+                    res_dict[o] = 'N/A'
+                else:
+                    res_dict[o] = 'Present'
+
+        data['data'] = res_dict
+
+        return data

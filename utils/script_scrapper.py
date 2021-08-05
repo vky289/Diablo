@@ -8,14 +8,18 @@ import itertools
 from utils.enums import DbType
 from utils.db_connection import oracle_db, postgres_db
 from utils.queries import O_TABLE_EXISTS, P_TABLE_EXISTS
+from utils.queries import O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q, P_PRIM_KEY_SCRIPT_Q, P_UNI_KEY_SCRIPT_Q
 from app.core.models import SYSetting
 
 
 class scrapper:
-    def __init__(self, db_type, main_db):
+    def __init__(self, main_db, db_type=None):
         self.log = logging.getLogger(__name__)
-        self.db_type = db_type
         self.main_db = main_db
+        if db_type is None:
+            self.db_type = main_db.type
+        else:
+            self.db_type = db_type
         self.conn = None
 
     def check_table_exists(self, table_name):
@@ -144,12 +148,14 @@ class scrapper:
             if self.conn is not None:
                 self.conn.close()
 
-    def get_pk_of_table(self, table_name, SCRIPT_Q):
+    def get_pk_of_table(self, table_name, SCRIPT_Q=None):
         prim_key = None
         try:
             if self.db_type == DbType.ORACLE:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
+                if SCRIPT_Q is None:
+                    SCRIPT_Q = O_PRIM_KEY_SCRIPT_Q
                 rows = cur.execute(SCRIPT_Q.format(TAB="'" + table_name + "'"))
                 fetch_rows = rows.fetchall()
                 if fetch_rows is not None and len(fetch_rows) > 0:
@@ -157,6 +163,8 @@ class scrapper:
             if self.db_type == DbType.POSTGRES:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
+                if SCRIPT_Q is None:
+                    SCRIPT_Q = P_PRIM_KEY_SCRIPT_Q
                 cur.execute(SCRIPT_Q % table_name)
                 fetch_rows = cur.fetchall()
                 if fetch_rows is not None and len(fetch_rows) > 0:
@@ -168,30 +176,38 @@ class scrapper:
                 self.conn.close()
         return prim_key
 
-    def get_uk_of_table(self, table_name, schema_name, SCRIPT_Q):
-        prim_key = None
+    def get_uk_of_table(self, table_name, schema_name, SCRIPT_Q=None):
+        ui_key = None
         try:
             if self.db_type == DbType.ORACLE:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
+                if SCRIPT_Q is None:
+                    SCRIPT_Q = O_UNI_KEY_SCRIPT_Q
                 qqq = SCRIPT_Q.format(TAB=table_name, SCH=schema_name)
                 rows = cur.execute(qqq)
                 fetch_rows = rows.fetchall()
                 if fetch_rows is not None and len(fetch_rows) > 0:
-                    prim_key = fetch_rows[0][0]
+                    ui_key = set()
+                    for rows in fetch_rows:
+                        ui_key.add(rows[0])
             if self.db_type == DbType.POSTGRES:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
+                if SCRIPT_Q is None:
+                    SCRIPT_Q = P_UNI_KEY_SCRIPT_Q
                 cur.execute(SCRIPT_Q % table_name)
                 fetch_rows = cur.fetchall()
                 if fetch_rows is not None and len(fetch_rows) > 0:
-                    prim_key = fetch_rows[0][0]
+                    ui_key = set()
+                    for rows in fetch_rows:
+                        ui_key.add(rows[0])
         except Exception as e:
             self.log.error("Something wrong with the query - DB Type {} - {} - find PK".format(str(self.db_type), str(e)))
         finally:
             if self.conn is not None:
                 self.conn.close()
-        return prim_key
+        return ui_key
 
     def prepare_stmt(self, rows, values):
         col_to_avoid = ['ROW_NUM']
@@ -256,16 +272,22 @@ class scrapper:
         if pk_col is None:
             pk_col = 1
         try:
-            if self.db_type == DbType.ORACLE:
-                if self.conn is None:
-                    self.conn = self.get_connections(self.db_type)
+            cur = None
+            if self.conn is None:
+                self.conn = self.get_connections(self.db_type)
             cur = self.conn.cursor()
+
             for lower_bound in range(upper_bound, table_row_count, batch_size):
-                args = [str(pk_col), str(pk_col), lower_bound, lower_bound + batch_size - 1]
-                qqq = query.format(TAB=table_name)
-                rows = cur.execute(qqq, args)
+                if self.db_type == DbType.ORACLE:
+                    qqq = query.format(TAB=table_name)
+                    args = [str(','.join(pk_col)), str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1]
+                    rows = cur.execute(qqq, args)
+                else:
+                    args = (str(','.join(pk_col)), table_name, str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1, )
+                    cur.execute(query % args)
+                    rows = cur
                 if col_names is None:
-                    col_names = [desc[0] for desc in cur.description]
+                    col_names = [desc[0].upper() for desc in cur.description]
                 for row in rows.fetchall():
                     tt = tuple()
                     for rr in row:

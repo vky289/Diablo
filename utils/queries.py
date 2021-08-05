@@ -1,10 +1,14 @@
 O_PING_DB = '''SELECT BANNER_FULL FROM v$version'''
 O_PING_DB_2 = "SELECT BANNER FROM v$version WHERE banner LIKE 'Oracle%'"
 P_PING_DB = '''SELECT version()'''
-O_RET_TABLE_ROW_QUERY = '''SELECT * FROM (SELECT aabc.*, row_number() over (order by :PK_COL) as row_num FROM {TAB} aabc ORDER BY :PK_COL) 
+O_RET_TABLE_ROW_QUERY = '''SELECT aka.* FROM (SELECT aabc.*, row_number() over (order by :PK_COL) as row_num FROM {TAB} aabc ORDER BY :PK_COL) aka  
         WHERE 
-        row_num BETWEEN :LOWER_BOUND AND 
+        aka.row_num BETWEEN :LOWER_BOUND AND 
         :UPPER_BOUND'''
+P_RET_TABLE_ROW_QUERY = '''SELECT aka.* FROM (SELECT aabc.*, row_number() over (order by %s) as row_num FROM %s aabc ORDER BY %s) aka  
+        WHERE 
+        aka.row_num BETWEEN %s AND 
+        %s'''
 O_TABLE_Q = '''SELECT * from :TABLE'''
 P_TABLE_Q = '''SELECT * from %s'''
 O_EN_TRIG_Q = '''ALTER TABLE :TAB ENABLE TRIGGER ALL'''
@@ -28,6 +32,16 @@ P_PRO_SCRIPT_Q = '''SELECT UPPER(p.proname) AS function_name FROM pg_proc p JOIN
 O_IND_SCRIPT_Q = '''select INDEX_NAME from USER_INDEXES where TABLE_OWNER = :SCH'''
 P_IND_SCRIPT_Q = '''SELECT UPPER(indexname) FROM pg_indexes WHERE schemaname = $SCHEMA'''
 O_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
+FROM sys.all_indexes i,
+     sys.all_ind_columns c
+WHERE i.table_name  = '{TAB}'
+  AND i.owner       = '{SCH}'
+  AND i.uniqueness  = 'UNIQUE'
+  AND i.index_name  = c.index_name
+  AND i.table_owner = c.table_owner
+  AND i.table_name  = c.table_name
+  AND i.owner       = c.index_owner'''
+P_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
 FROM sys.all_indexes i,
      sys.all_ind_columns c
 WHERE i.table_name  = '{TAB}'

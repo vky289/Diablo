@@ -1,3 +1,8 @@
+import datetime
+import json
+import logging
+import os
+
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets, generics
@@ -13,6 +18,12 @@ from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data
 
+from tempfile import NamedTemporaryFile
+from django.utils.encoding import smart_str
+from django.http import StreamingHttpResponse, FileResponse
+from utils.compare_database import any_db
+import shutil
+from django.core.signals import request_finished
 
 class DBInstanceListSet(viewsets.ModelViewSet):
     serializer_class = DBInstanceSerializer
@@ -200,6 +211,45 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
     queryset = DBTableCompare.objects.all()
 
     def get(self, request, *args, **kwargs):
+        src_id = self.request.query_params.get('src_id')
+        dst_id = self.request.query_params.get('dst_id')
+        table_name = self.request.query_params.get('table_name')
+        row_count = self.request.query_params.get('row_count')
+        unparsed_data = self.request.data.get('unparsed_value')
+
+        self.cant_be_empty('dst_id', dst_id)
+        action = self.kwargs.get('action')
+        if action == 'compareRawData':
+            self.cant_be_empty('src_id', src_id)
+            self.cant_be_empty('table_name', table_name)
+            self.cant_be_empty('row_count', dst_id)
+            try:
+                src_db = DBInstance.objects.get(id=src_id)
+                dst_db = DBInstance.objects.get(id=dst_id)
+            except DBInstance.DoesNotExist:
+                return HttpResponseBadRequest
+            compared_data = any_db(request.user, src_db=src_db, dst_db=dst_db,
+                                   compare_db=DBCompare.objects.get(src_db=src_db, dst_db=dst_db)). \
+                compare_real_data(table_name=table_name)
+            newFileName = table_name+ '_' + \
+                          str(datetime.datetime.now()).replace(' ',  '_') \
+                              .replace('-', '_') \
+                              .replace(':', '_')
+
+            try:
+                tfile = NamedTemporaryFile(delete=False, prefix=newFileName, suffix='.json', )
+                with open(tfile.name, 'w+') as fi:
+                    fi.write(json.dumps(compared_data, indent=4, sort_keys=True))
+                tfile.flush()
+                tfile.read()
+                response = FileResponse(open(tfile.name, 'rb'))
+                response['Content-Length'] = tfile.tell()
+                response['Content-type'] = 'application/octet-stream'
+                response['Content-Disposition'] = f'attachment; filename=%s' % smart_str(newFileName + '.json')
+                return response
+            finally:
+                if request_finished:
+                    os.remove(tfile.name)
         return render(request, "page-405.html", status=405)
 
     def pre_save(self, request, *args, **kwargs):
@@ -248,7 +298,6 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
             queue.enqueue(compare_db_ind, args=(request.user, src_db, dst_db, compare_db))
             queue.enqueue(compare_db_trig, args=(request.user, src_db, dst_db, compare_db))
             return JsonResponse(data={'SuccessMessage': 'DB table row comparisons started!'})
-
         elif action == 'bulkImport':
             self.cant_be_empty('src_id', src_id)
             b_tables = self.request.query_params.get('bulk_tables')
