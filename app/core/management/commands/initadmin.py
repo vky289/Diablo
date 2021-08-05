@@ -26,3 +26,9 @@ class Command(BaseCommand):
             sy_set.name = 'COL_TO_AVOID'
             sy_set.value = 'ROW_NUM,COMMENT_ID,GEOM'
             sy_set.save()
+        cols_to_avoid = SYSetting.objects.filter(name='COL_COMPARE_MAX')
+        if len(cols_to_avoid) == 0:
+            sy_set = SYSetting()
+            sy_set.name = 'COL_COMPARE_MAX'
+            sy_set.value = '1000'
+            sy_set.save()

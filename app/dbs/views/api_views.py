@@ -1,6 +1,5 @@
 import datetime
 import json
-import logging
 import os
 
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
@@ -17,12 +16,12 @@ from utils.enums import DBObject, DbType
 from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data
+from utils.compare_data import comparator
 
 from tempfile import NamedTemporaryFile
 from django.utils.encoding import smart_str
-from django.http import StreamingHttpResponse, FileResponse
+from django.http import FileResponse
 from utils.compare_database import any_db
-import shutil
 from django.core.signals import request_finished
 
 class DBInstanceListSet(viewsets.ModelViewSet):
@@ -228,9 +227,13 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
                 dst_db = DBInstance.objects.get(id=dst_id)
             except DBInstance.DoesNotExist:
                 return HttpResponseBadRequest
-            compared_data = any_db(request.user, src_db=src_db, dst_db=dst_db,
-                                   compare_db=DBCompare.objects.get(src_db=src_db, dst_db=dst_db)). \
-                compare_real_data(table_name=table_name)
+            try:
+                compared_data = comparator(request.user, src_db=src_db, dst_db=dst_db,
+                                       compare_db=DBCompare.objects.get(src_db=src_db, dst_db=dst_db)). \
+                    compare_data(table_name=table_name)
+            except RuntimeError as e:
+                return JsonResponse(data={'SuccessMessage': str(e)}, status=501)
+
             newFileName = table_name+ '_' + \
                           str(datetime.datetime.now()).replace(' ',  '_') \
                               .replace('-', '_') \

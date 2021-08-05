@@ -67,7 +67,7 @@ class xerox:
                 pk_col = self.get_unique_key()
 
             data, col_names = scrapper(db_type=self.src_db_type,
-                                       main_db=self.src_db).crawl_db(O_RET_TABLE_ROW_QUERY, self.table_name, int(self.table_row_count), pk_col,
+                                       main_db=self.src_db).crawl_db(self.table_name, int(self.table_row_count), pk_col,
                                                                      upper_bound=self.upper_bound)
 
             divide_by = 1000

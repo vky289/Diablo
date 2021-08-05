@@ -9,6 +9,7 @@ from utils.enums import DbType
 from utils.db_connection import oracle_db, postgres_db
 from utils.queries import O_TABLE_EXISTS, P_TABLE_EXISTS
 from utils.queries import O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q, P_PRIM_KEY_SCRIPT_Q, P_UNI_KEY_SCRIPT_Q
+from utils.queries import O_RET_TABLE_ROW_QUERY, P_RET_TABLE_ROW_QUERY
 from app.core.models import SYSetting
 
 
@@ -266,7 +267,7 @@ class scrapper:
                     di[attr.name] = repr(value)
             return di
 
-    def crawl_db(self, query, table_name, table_row_count, pk_col, upper_bound=0, batch_size=5000):
+    def crawl_db(self, table_name, table_row_count, pk_col, query=None, upper_bound=0, batch_size=5000):
         data = []
         col_names = None
         if pk_col is None:
@@ -279,10 +280,14 @@ class scrapper:
 
             for lower_bound in range(upper_bound, table_row_count, batch_size):
                 if self.db_type == DbType.ORACLE:
+                    if query is None:
+                        query = O_RET_TABLE_ROW_QUERY
                     qqq = query.format(TAB=table_name)
                     args = [str(','.join(pk_col)), str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1]
                     rows = cur.execute(qqq, args)
                 else:
+                    if query is None:
+                        query = P_RET_TABLE_ROW_QUERY
                     args = (str(','.join(pk_col)), table_name, str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1, )
                     cur.execute(query % args)
                     rows = cur
