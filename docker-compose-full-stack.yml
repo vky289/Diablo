@@ -44,7 +44,7 @@ services:
     links:
       - diablo-redis
       - diablo-db
-  django_rq_worker_default:
+  django_rq_worker_default_0:
     build: .
     image: diablo-web
     container_name: django_rq_worker_default
@@ -55,10 +55,32 @@ services:
       - diablo-web
     links:
       - diablo-redis
-  django_rq_worker_high:
+  django_rq_worker_default_1:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_default
+    command: python manage.py rqworker default
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high_0:
     build: .
     image: diablo-web
     container_name: django_rq_worker_high_1
+    command: python manage.py rqworker high
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_high_1:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_high_2
     command: python manage.py rqworker high
     depends_on:
       - diablo-db
@@ -77,10 +99,21 @@ services:
       - diablo-web
     links:
       - diablo-redis
-  django_rq_worker_low:
+  django_rq_worker_low_0:
     build: .
     image: diablo-web
     container_name: django_rq_worker_low_1
+    command: python manage.py rqworker low
+    depends_on:
+      - diablo-db
+      - diablo-redis
+      - diablo-web
+    links:
+      - diablo-redis
+  django_rq_worker_low_1:
+    build: .
+    image: diablo-web
+    container_name: django_rq_worker_low_2
     command: python manage.py rqworker low
     depends_on:
       - diablo-db
