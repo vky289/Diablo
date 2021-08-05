@@ -36,7 +36,7 @@ class any_db:
         return sorted(fin_set), fin_dict
 
     @staticmethod
-    def get_it_col_datatype(set_of_values):
+    def get_it_col_datatype(set_of_values, pk=None):
         fin_set = set()
         fin_dict = dict()
         if set_of_values:
@@ -48,16 +48,25 @@ class any_db:
                     fin_dict[s_o_v[0]] += [{'column_name' : s_o_v[1], 'data_type': s_o_v[2], 'precision': s_o_v[3]}]
         return sorted(fin_set), fin_dict
 
-    def store_in_db_columns(self, dict2, db_type):
+    def store_in_db_columns(self, dict2, db_type, dict3):
         for o_r in dict2:
-            l_c_list = dict2.get(o_r)
-            for l_c in l_c_list:
+            pk = dict3.get(o_r)
+            for l_c in dict2.get(o_r):
                 obj = DBTableColumnCompare()
                 obj.table_name = o_r
                 obj.compare_dbs = self.compare_db
                 obj.type = db_type
-                obj.column_name = l_c.get('column_name')
-                if l_c.get('column_name') == 'GEOM':
+                column_name = l_c.get('column_name')
+                obj.column_name = column_name
+                if pk is not None:
+                    if type(pk) is set:
+                        for ppp in pk:
+                            if column_name == ppp:
+                                obj.is_ui = True
+                    else:
+                        if column_name == pk:
+                            obj.is_ui = True
+                if column_name == 'GEOM':
                     try:
                         oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
                         oob.geom = True
@@ -73,6 +82,8 @@ class any_db:
                         pass
                 obj.datatype = l_c.get('data_type')
                 obj.precision = l_c.get('precision')
+                if not obj.is_ui:
+                    obj.is_ui = False
                 obj.save()
 
 
@@ -240,6 +251,15 @@ class any_db:
 
         self.store_views(res_dict, obj_type)
 
+    def process_pk_ui(self, dict1):
+        final_dict = {}
+        if dict1:
+            for each_table in dict1:
+                pk = self.get_primary_key(table_name=each_table)
+                if pk is None:
+                    pk = self.get_unique_key(table_name=each_table)
+                final_dict[each_table] = pk
+        return final_dict
 
     def table_data_type_db(self):
         try:
@@ -261,16 +281,19 @@ class any_db:
                                                                                                   SCRIPT_Q=src_q_script)
             o_set2, o_dict2 = self.get_it_col_datatype(o_result1)
 
+            o_dict3 = self.process_pk_ui(o_dict2)
+
             p_result2, p_col_names2 = scrapper(db_type=self.dst_db_type,
                                                main_db=self.dst_db).get_table_desc_cols(schema_name=self.dst_db.service,
                                                                                                SCRIPT_Q=dst_q_script)
 
             p_set2, p_dict2 = self.get_it_col_datatype(p_result2)
 
+            p_dict3 = self.process_pk_ui(p_dict2)
 
-            self.store_in_db_columns(o_dict2, DbType.ORACLE)
+            self.store_in_db_columns(o_dict2, DbType.ORACLE, o_dict3)
 
-            self.store_in_db_columns(p_dict2, DbType.POSTGRES)
+            self.store_in_db_columns(p_dict2, DbType.POSTGRES, p_dict3)
 
             table_com = list(o_dict2.keys()) + list(set(list(p_dict2.keys())) - set(list(o_dict2.keys())))
 
@@ -305,9 +328,9 @@ class any_db:
         return scrapper(db_type=self.src_db_type,
                         main_db=self.src_db).get_pk_of_table(table_name)
 
-    def get_unique_key(self, table_name, src_schema_name):
+    def get_unique_key(self, table_name):
         return scrapper(db_type=self.src_db_type,
-                        main_db=self.src_db).get_uk_of_table(table_name, src_schema_name)
+                        main_db=self.src_db).get_uk_of_table(table_name, self.src_db.username)
 
     def compare_real_data(self, table_name, table_row_count, pk_col):
 

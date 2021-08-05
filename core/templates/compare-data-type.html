@@ -15,18 +15,31 @@
                 {% else %}
                 <th class="cols">Src</th>
                 {% endif %}
+                <th class="cols">PK/UI</th>
                 {% if dst_db_type %}
                 <th class="cols">Dst(<img src="{% static 'assets/img/' %}{{dst_db_type}}.png" width="40" height="40"
                                       alt="{{dst_db_type}}">)</th>
                 {% else %}
                 <th class="cols">Dst</th>
                 {% endif %}
+                <th class="cols">PK/UI</th>
             </tr>
             {% for res in data_type_compare_res %}
             <tr>
                 <td>{{ res.column_name }}</td>
                 <td>{{ res.src_data_type }}</td>
+                {% if res.src_is_ui %}
+                <td><i class="fa fa-check-circle"></i></td>
+                {% else %}
+                <td></td>
+                {% endif %}
                 <td>{{ res.dst_data_type }}</td>
+                {% if res.dst_is_ui %}
+                <td><i class="fa fa-check-circle"></i></td>
+                {% else %}
+                <td></td>
+                {% endif %}
+
             </tr>
             {% endfor %}
         </table>

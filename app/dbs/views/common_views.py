@@ -135,13 +135,16 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
             final_dict = dict()
             dd_1 = d_c_n.column_name
             final_dict['column_name'] = dd_1
+            final_dict['ui'] = dd_1
             for src in src_table_col:
                 if dd_1 == src.column_name:
                     final_dict['src_data_type'] = src.datatype + '(' + src.precision + ')'
+                    final_dict['src_is_ui'] = src.is_ui
 
             for dst in dst_table_col:
                 if dd_1 == dst.column_name:
                     final_dict['dst_data_type'] = dst.datatype + '(' + dst.precision + ')'
+                    final_dict['dst_is_ui'] = dst.is_ui
             dd.append(final_dict)
         context['data_type_compare_res'] = dd
         context['table_name'] = table_name
