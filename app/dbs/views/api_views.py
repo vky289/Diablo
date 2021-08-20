@@ -9,7 +9,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from django_rq import get_queue
 
-from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare
+from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare, DBCompareDBResults
 from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
 from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
 from utils.enums import DBObject, DbType
@@ -291,6 +291,16 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
                 compare_db.src_db = src_db
                 compare_db.dst_db = dst_db
                 compare_db.save()
+
+            try:
+                com = DBCompareDBResults.objects.get(compare_dbs=compare_db)
+                if com.status == 0 and com.last_compared < (datetime.now() - datetime.timedelta(minutes=5)):
+                    return JsonResponse(data={'SuccessMessage': 'Try again in 5 min! There is already a background process comparing the same DB!'})
+            except DBCompareDBResults.DoesNotExist:
+                com = DBCompareDBResults()
+                com.compare_dbs = compare_db
+                com.save()
+
             queue = get_queue('high')
             row_compare = queue.enqueue(compare_db_rows, args=(request.user, src_db, dst_db, compare_db))
             queue.enqueue(compare_db_data_types, args=(request.user, src_db, dst_db, compare_db), depends_on=row_compare)

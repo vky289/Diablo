@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from app.dbs.models import DBCompare
 
 
 class RQQueue(models.Model):
@@ -7,6 +7,7 @@ class RQQueue(models.Model):
     name = models.CharField(max_length=100, blank=False)
     func_name = models.CharField(max_length=400, blank=False, null=True)
     status = models.CharField(max_length=100, blank=False, null=True)
+    compare_dbs = models.ForeignKey(DBCompare, on_delete=models.CASCADE, related_name='s_q_db_d_q_db', default=None, null=True)
     created_at = models.DateTimeField(blank=True, null=True)
     ended_at = models.DateTimeField(blank=True, null=True)
 

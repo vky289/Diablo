@@ -2,7 +2,7 @@ import logging
 
 from utils.enums import DbType, DBObject
 from utils.script_scrapper import scrapper
-from app.dbs.models import DBTableCompare, DBCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
+from app.dbs.models import DBTableCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
 from utils.queries import O_ROW_COUNT, P_ROW_COUNT, O_COLUMN_NAMES, P_COLUMN_NAMES, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q, O_IND_SCRIPT_Q, \
     P_IND_SCRIPT_Q, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q, \
     O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q
@@ -37,20 +37,17 @@ class any_db:
 
     @staticmethod
     def get_it_col_datatype(set_of_values, pk=None):
-        fin_set = set()
         fin_dict = dict()
         if set_of_values:
             for s_o_v in set_of_values:
                 if isinstance(s_o_v, str) or isinstance(s_o_v, int) or isinstance(s_o_v, float) or isinstance(s_o_v, tuple):
-                    fin_set.add(s_o_v[0])
                     if not fin_dict.get(s_o_v[0]):
                         fin_dict[s_o_v[0]] = []
-                    fin_dict[s_o_v[0]] += [{'column_name' : s_o_v[1], 'data_type': s_o_v[2], 'precision': s_o_v[3]}]
-        return sorted(fin_set), fin_dict
+                    fin_dict[s_o_v[0]] += [{'column_name': s_o_v[1], 'data_type': s_o_v[2], 'precision': s_o_v[3]}]
+        return fin_dict
 
-    def store_in_db_columns(self, dict2, db_type, dict3):
+    def store_in_db_columns(self, dict2, db_type):
         for o_r in dict2:
-            pk = dict3.get(o_r)
             for l_c in dict2.get(o_r):
                 obj = DBTableColumnCompare()
                 obj.table_name = o_r
@@ -58,14 +55,6 @@ class any_db:
                 obj.type = db_type
                 column_name = l_c.get('column_name')
                 obj.column_name = column_name
-                if pk is not None:
-                    if type(pk) is set:
-                        for ppp in pk:
-                            if column_name == ppp:
-                                obj.is_ui = True
-                    else:
-                        if column_name == pk:
-                            obj.is_ui = True
                 if column_name == 'GEOM':
                     try:
                         oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
@@ -105,6 +94,7 @@ class any_db:
 
     def row_count_db(self):
         try:
+            send_notification(self.user, "DB {} -> {} table comparison started".format(self.src_db.name, self.dst_db.name))
             obj1 = DBTableCompare.objects.filter(compare_dbs=self.compare_db)
             obj1.delete()
 
@@ -144,6 +134,7 @@ class any_db:
 
     def fk_db(self):
         try:
+            send_notification(self.user, "DB {} -> {} Foreign Key comparison started".format(self.src_db.name, self.dst_db.name))
             obj = DBObjectFKCompare.objects.filter(compare_dbs=self.compare_db)
             obj.delete()
 
@@ -191,6 +182,7 @@ class any_db:
 
     def cdata_view(self):
         try:
+            send_notification(self.user, "DB {} -> {} View comparison started".format(self.src_db.name, self.dst_db.name))
             self.x_c_data_extract(DBObject.VIEW, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} View comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
@@ -199,6 +191,7 @@ class any_db:
 
     def cdata_ind(self):
         try:
+            send_notification(self.user, "DB {} -> {} Index comparison started".format(self.src_db.name, self.dst_db.name))
             self.x_c_data_extract(DBObject.INDEX, O_IND_SCRIPT_Q, P_IND_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} Index comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
@@ -207,6 +200,7 @@ class any_db:
 
     def cdata_seq(self):
         try:
+            send_notification(self.user, "DB {} -> {} Sequence comparison started".format(self.src_db.name, self.dst_db.name))
             self.x_c_data_extract(DBObject.SEQUENCE, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} Sequence comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
@@ -215,6 +209,7 @@ class any_db:
 
     def cdata_trig(self):
         try:
+            send_notification(self.user, "DB {} -> {} Trigger comparison started".format(self.src_db.name, self.dst_db.name))
             self.x_c_data_extract(DBObject.TRIGGER, O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q)
             send_notification(self.user, "DB {} -> {} Trigger comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
@@ -251,18 +246,53 @@ class any_db:
 
         self.store_views(res_dict, obj_type)
 
-    def process_pk_ui(self, dict1):
-        final_dict = {}
-        if dict1:
-            for each_table in dict1:
-                pk = self.get_primary_key(table_name=each_table)
-                if pk is None:
-                    pk = self.get_unique_key(table_name=each_table)
-                final_dict[each_table] = pk
-        return final_dict
+    def process_pk_ui(self, db_type):
+
+        obj = DBTableCompare.objects.filter(compare_dbs=self.compare_db).values('table_name')
+
+        pk_all = scrapper(db_type=self.src_db_type,
+                          main_db=self.src_db).get_pk_of_all_table()
+        ui_all = scrapper(db_type=self.src_db_type,
+                          main_db=self.src_db).get_uk_of_all_table()
+
+        for each_table_dict in obj:
+            each_table = each_table_dict.get('table_name')
+            pk = pk_all.get(each_table)
+            ui = ui_all.get(each_table)
+
+            if ui is not None and type(ui) is list:
+                for ppp in ui:
+                    try:
+                        obj = DBTableColumnCompare.objects.get(compare_dbs=self.compare_db, table_name=each_table, type=db_type, column_name=ppp)
+                        obj.is_ui = True
+                        obj.save()
+                    except DBTableColumnCompare.DoesNotExist:
+                        pass
+            else:
+                if pk is not None:
+                    try:
+                        obj = DBTableColumnCompare.objects.get(compare_dbs=self.compare_db, table_name=each_table, type=db_type, column_name=pk[0])
+                        obj.is_ui = True
+                        obj.save()
+                    except DBTableColumnCompare.DoesNotExist:
+                        pass
+
+    def table_column_pk_ui_comparision(self):
+        try:
+            send_notification(self.user, "DB {} -> {} PK/UI comparison started".format(self.src_db.name, self.dst_db.name))
+
+            self.process_pk_ui(DbType.ORACLE)
+
+            self.process_pk_ui(DbType.POSTGRES)
+
+        except Exception as e:
+            send_notification(self.user, "DB {} -> {} exception occurred during PK/UI comparison- {}".format(self.src_db.name,
+                                                                                                                    self.dst_db.name,
+                                                                                                                e))
 
     def table_data_type_db(self):
         try:
+            send_notification(self.user, "DB {} -> {} datatype comparison started".format(self.src_db.name, self.dst_db.name))
             obj1 = DBTableColumnCompare.objects.filter(compare_dbs=self.compare_db)
             obj1.delete()
 
@@ -279,21 +309,17 @@ class any_db:
             o_result1, o_col_names1 = scrapper(db_type=self.src_db_type,
                                                main_db=self.src_db).get_table_desc_cols(schema_name=self.src_db.username,
                                                                                                   SCRIPT_Q=src_q_script)
-            o_set2, o_dict2 = self.get_it_col_datatype(o_result1)
-
-            o_dict3 = self.process_pk_ui(o_dict2)
 
             p_result2, p_col_names2 = scrapper(db_type=self.dst_db_type,
                                                main_db=self.dst_db).get_table_desc_cols(schema_name=self.dst_db.service,
                                                                                                SCRIPT_Q=dst_q_script)
 
-            p_set2, p_dict2 = self.get_it_col_datatype(p_result2)
+            o_dict2 = self.get_it_col_datatype(o_result1)
+            p_dict2 = self.get_it_col_datatype(p_result2)
 
-            p_dict3 = self.process_pk_ui(p_dict2)
+            self.store_in_db_columns(o_dict2, DbType.ORACLE)
 
-            self.store_in_db_columns(o_dict2, DbType.ORACLE, o_dict3)
-
-            self.store_in_db_columns(p_dict2, DbType.POSTGRES, p_dict3)
+            self.store_in_db_columns(p_dict2, DbType.POSTGRES)
 
             table_com = list(o_dict2.keys()) + list(set(list(p_dict2.keys())) - set(list(o_dict2.keys())))
 
@@ -323,14 +349,6 @@ class any_db:
                 oob = DBTableCompare.objects.get(table_name=tt, compare_dbs=self.compare_db)
                 oob.mismatch_in_cols_count = True
                 oob.save()
-
-    def get_primary_key(self, table_name):
-        return scrapper(db_type=self.src_db_type,
-                        main_db=self.src_db).get_pk_of_table(table_name)
-
-    def get_unique_key(self, table_name):
-        return scrapper(db_type=self.src_db_type,
-                        main_db=self.src_db).get_uk_of_table(table_name, self.src_db.username)
 
     def compare_real_data(self, table_name, table_row_count, pk_col):
 

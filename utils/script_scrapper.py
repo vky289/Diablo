@@ -8,8 +8,9 @@ import itertools
 from utils.enums import DbType
 from utils.db_connection import oracle_db, postgres_db
 from utils.queries import O_TABLE_EXISTS, P_TABLE_EXISTS
-from utils.queries import O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q, P_PRIM_KEY_SCRIPT_Q, P_UNI_KEY_SCRIPT_Q
-from utils.queries import O_RET_TABLE_ROW_QUERY, P_RET_TABLE_ROW_QUERY
+from utils.queries import O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q, P_PRIM_KEY_SCRIPT_Q
+from utils.queries import P_UNI_KEY_SCRIPT_Q, O_PRIM_KEY_ALL_TABLE_Q, P_PRIM_KEY_ALL_TABLE_Q, O_UNI_KEY_ALL_TABLE_Q, P_UNI_KEY_ALL_TABLE_Q
+from utils.queries import O_RET_TABLE_ROW_QUERY, P_RET_TABLE_ROW_QUERY, O_COLUMN_NAMES, P_COLUMN_NAMES
 from app.core.models import SYSetting
 
 
@@ -149,6 +150,30 @@ class scrapper:
             if self.conn is not None:
                 self.conn.close()
 
+    def get_pk_of_all_table(self):
+        prim_key = {}
+        try:
+            if self.db_type == DbType.ORACLE:
+                self.conn = self.get_connections(self.db_type)
+                cur = self.conn.cursor()
+                rows = cur.execute(O_PRIM_KEY_ALL_TABLE_Q.format(SCH="'" + self.main_db.username + "'"))
+                fetch_rows = rows.fetchall()
+            if self.db_type == DbType.POSTGRES:
+                self.conn = self.get_connections(self.db_type)
+                cur = self.conn.cursor()
+                cur.execute(P_PRIM_KEY_ALL_TABLE_Q % self.main_db.username)
+                fetch_rows = cur.fetchall()
+            if fetch_rows is not None and len(fetch_rows) > 0:
+                for e_row in fetch_rows:
+                    prim_key[e_row[1]] = e_row[0]
+        except Exception as e:
+            self.log.error("Something wrong with the query - DB Type {} - {} - find PK".format(str(self.db_type), str(e)))
+        finally:
+            if self.conn is not None:
+                self.conn.close()
+        return prim_key
+
+
     def get_pk_of_table(self, table_name, SCRIPT_Q=None):
         prim_key = None
         try:
@@ -176,6 +201,35 @@ class scrapper:
             if self.conn is not None:
                 self.conn.close()
         return prim_key
+
+    def get_uk_of_all_table(self):
+        ui_dict = {}
+        try:
+            fetch_rows = None
+            if self.db_type == DbType.ORACLE:
+                self.conn = self.get_connections(self.db_type)
+                cur = self.conn.cursor()
+                qqq = O_UNI_KEY_ALL_TABLE_Q.format(SCH=self.main_db.username)
+                rows = cur.execute(qqq)
+                fetch_rows = rows.fetchall()
+            if self.db_type == DbType.POSTGRES:
+                self.conn = self.get_connections(self.db_type)
+                cur = self.conn.cursor()
+                cur.execute(P_UNI_KEY_ALL_TABLE_Q % self.main_db.username)
+                fetch_rows = cur.fetchall()
+            if fetch_rows is not None and len(fetch_rows) > 0:
+                for rows in fetch_rows:
+                    if ui_dict.get(rows[1]) is None:
+                        ui_dict[rows[1]] = [rows[0]]
+                    else:
+                        ui_dict[rows[1]] += [rows[0]]
+        except Exception as e:
+            self.log.error("Something wrong with the query - DB Type {} - {} - find UI".format(str(self.db_type), str(e)))
+        finally:
+            if self.conn is not None:
+                self.conn.close()
+        return ui_dict
+
 
     def get_uk_of_table(self, table_name, schema_name, SCRIPT_Q=None):
         ui_key = None

@@ -32,8 +32,8 @@ P_PRO_SCRIPT_Q = '''SELECT UPPER(p.proname) AS function_name FROM pg_proc p JOIN
 O_IND_SCRIPT_Q = '''select INDEX_NAME from USER_INDEXES where TABLE_OWNER = :SCH'''
 P_IND_SCRIPT_Q = '''SELECT UPPER(indexname) FROM pg_indexes WHERE schemaname = $SCHEMA'''
 O_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
-FROM sys.all_indexes i,
-     sys.all_ind_columns c
+FROM all_indexes i,
+     all_ind_columns c
 WHERE i.table_name  = '{TAB}'
   AND i.owner       = '{SCH}'
   AND i.uniqueness  = 'UNIQUE'
@@ -41,16 +41,42 @@ WHERE i.table_name  = '{TAB}'
   AND i.table_owner = c.table_owner
   AND i.table_name  = c.table_name
   AND i.owner       = c.index_owner'''
-P_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
-FROM sys.all_indexes i,
-     sys.all_ind_columns c
-WHERE i.table_name  = '{TAB}'
-  AND i.owner       = '{SCH}'
+O_UNI_KEY_ALL_TABLE_Q = '''SELECT c.column_name as index_name, i.TABLE_NAME as table_name
+FROM all_indexes i,
+     all_ind_columns c
+WHERE i.owner       = '{SCH}'
   AND i.uniqueness  = 'UNIQUE'
   AND i.index_name  = c.index_name
   AND i.table_owner = c.table_owner
   AND i.table_name  = c.table_name
   AND i.owner       = c.index_owner'''
+P_UNI_KEY_SCRIPT_Q = '''SELECT conname
+FROM pg_constraint
+    WHERE conrelid =
+        (SELECT oid 
+        FROM pg_class
+        WHERE relname LIKE %(TABLE)s)'''
+P_UNI_KEY_ALL_TABLE_Q = '''select idx.relname as index_name,
+       tbl.relname as table_name
+from pg_index pgi
+         join pg_class idx on idx.oid = pgi.indexrelid
+         join pg_namespace insp on insp.oid = idx.relnamespace
+         join pg_class tbl on tbl.oid = pgi.indrelid
+         join pg_namespace tnsp on tnsp.oid = tbl.relnamespace
+where pgi.indisunique
+  and tnsp.nspname = %(SCHEMA)s'''
+O_PRIM_KEY_ALL_TABLE_Q = '''SELECT cols.column_name, cons.TABLE_NAME
+FROM all_constraints cons, all_cons_columns cols
+WHERE cons.constraint_type = 'P'
+  AND cons.constraint_name = cols.constraint_name
+  AND cons.owner = cols.owner AND cols.OWNER = {SCH}'''
+P_PRIM_KEY_ALL_TABLE_Q = '''select kcu.column_name, tco.table_name
+from information_schema.table_constraints tco
+         join information_schema.key_column_usage kcu
+              on kcu.constraint_name = tco.constraint_name
+                  and kcu.constraint_schema = tco.constraint_schema
+                  and kcu.constraint_name = tco.constraint_name
+where tco.constraint_type = 'PRIMARY KEY' and tco.table_schema = %(SCHEMA)s'''
 O_PRIM_KEY_SCRIPT_Q = '''SELECT cols.column_name
                                 FROM all_constraints cons, all_cons_columns cols
                                 WHERE cons.constraint_type = 'P'

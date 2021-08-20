@@ -1,7 +1,7 @@
 from django_rq import job
 import logging
 
-from app.dbs.models import DBInstance
+from app.dbs.models import DBInstance, DBCompareDBResults
 from app.core.models import RQQueue
 from utils.compare_database import any_db
 from utils.truncate_table import delete
@@ -9,7 +9,6 @@ from utils.copy_table import xerox
 from utils.script_scrapper import scrapper
 
 from redis import Redis
-from rq import Queue
 from rq.registry import FinishedJobRegistry, StartedJobRegistry
 from rq.job import Job
 from django.utils.timezone import make_aware
@@ -20,16 +19,18 @@ logger = logging.getLogger(__name__)
 redis = Redis(host="diablo-redis", db=0, port=6379, socket_connect_timeout=10, socket_timeout=10)
 
 
-def store_started_job(job_ids):
+def store_started_job(job_ids, flag=1):
+    # flag 1 = Start
+    # flag 2 = Finished
     for j_id in job_ids:
         try:
             bj = RQQueue.objects.filter(name=j_id)
             job_q = Job.fetch(j_id, connection=redis)
             if bj:
                 abj = RQQueue.objects.filter(name=j_id)[0]
-                if job_q.started_at is not None:
+                if job_q.started_at is not None and flag == 1:
                     abj.created_at = make_aware(job_q.started_at)
-                if job_q.ended_at is not None:
+                if job_q.ended_at is not None and flag == 2:
                     abj.ended_at = make_aware(job_q.ended_at)
                 abj.status = job_q._status
                 abj.save()
@@ -39,9 +40,10 @@ def store_started_job(job_ids):
                     obj = RQQueue()
                     obj.name = job_q.id
                     obj.func_name = job_q.func_name
-                    if job_q.started_at is not None:
+                    obj.compare_dbs = job_q.args[3]
+                    if job_q.started_at is not None and flag == 1:
                         obj.created_at = make_aware(job_q.started_at)
-                    if job_q.ended_at is not None:
+                    if job_q.ended_at is not None and flag == 2:
                         obj.ended_at = make_aware(job_q.ended_at)
                     obj.status = job_q._status
                     obj.save()
@@ -64,9 +66,10 @@ def wrap_up_job():
     finished_registry_high = FinishedJobRegistry('high', connection=redis)
     finished_registry_low = FinishedJobRegistry('low', connection=redis)
 
-    store_started_job(finished_registry.get_job_ids())
-    store_started_job(finished_registry_high.get_job_ids())
-    store_started_job(finished_registry_low.get_job_ids())
+    store_started_job(finished_registry.get_job_ids(), 2)
+    store_started_job(finished_registry_high.get_job_ids(), 2)
+    store_started_job(finished_registry_low.get_job_ids(), 2)
+
 
 @job('high')
 def compare_db_rows(user, src_db, dst_db, compare_db):
@@ -79,6 +82,23 @@ def compare_db_rows(user, src_db, dst_db, compare_db):
 def compare_db_data_types(user, src_db, dst_db, compare_db):
     get_current_queue_items()
     any_db(user, src_db, dst_db, compare_db).table_data_type_db()
+    try:
+        com = DBCompareDBResults.objects.get(compare_dbs=compare_db)
+        com.status = 1
+    except DBCompareDBResults.DoesNotExist:
+        pass
+    wrap_up_job()
+
+
+@job('low')
+def compare_db_tables_fk_ui(user, src_db, dst_db, compare_db):
+    get_current_queue_items()
+    any_db(user, src_db, dst_db, compare_db).table_column_pk_ui_comparision()
+    try:
+        com = DBCompareDBResults.objects.get(compare_dbs=compare_db)
+        com.status = 1
+    except DBCompareDBResults.DoesNotExist:
+        pass
     wrap_up_job()
 
 
