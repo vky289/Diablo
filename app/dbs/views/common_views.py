@@ -3,7 +3,7 @@ from django.views.generic import ListView
 from django.contrib import messages
 from diablo.tasks import compare_db_rows, compare_db_data_types, compare_db_tables_fk_ui, \
     compare_db_views, compare_db_seq, compare_db_fk, \
-    compare_db_trig, compare_db_ind
+    compare_db_trig, compare_db_ind, compare_db_for_geom_module_id, enable_all_postgre_triggers, disable_all_postgre_triggers
 from diablo.tasks import truncate_table, copy_table_content
 from diablo.tasks import delete_instance_n_its_data
 from django.urls import reverse
@@ -13,7 +13,6 @@ from utils.compare_database import any_db
 
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBCompareDBResults
 from utils.enums import DbType
-from utils.enable_disable_triggers import triggers
 from utils.db_connection import oracle_db, postgres_db
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -60,7 +59,7 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
                         result, status = postgres_db(obj).ping_db()
                     if status == 0:
                         obj.save()
-                        messages.info(request, f'DB Connections Successfully saved! ' + str(result))
+                        messages.success(request, f'DB Connections Successfully saved! ' + str(result))
                     else:
                         messages.error(request, f'Check DB Settings! ' + str(result))
                 if request.user.has_perm('dbs.change_dbinstance'):
@@ -73,16 +72,16 @@ class DbInstanceDetailView(PermissionRequiredMixin, ListView):
                             result, status = postgres_db(obj).ping_db()
                         if status == 0:
                             obj.save()
-                            messages.info(request, f'DB Connections Updated saved! ' + str(result))
+                            messages.success(request, f'DB Connections Updated saved! ' + str(result))
                         else:
                             messages.error(request, f'Check DB Settings! ' + str(result))
                     if self.request.POST.get('delete'):
                         delete_instance_n_its_data.delay(self.request.POST.get('id'))
                         messages.error(request, f'Delete initiated!!')
                 else:
-                    messages.info(request, 'You don\'t have permission to modify/delete DB details!!')
+                    messages.success(request, 'You don\'t have permission to modify/delete DB details!!')
             else:
-                messages.info(request, 'You don\'t have permission to add DB details!!')
+                messages.success(request, 'You don\'t have permission to add DB details!!')
             return HttpResponseRedirect(reverse('dbs:db_details'))
 
 
@@ -159,6 +158,28 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
         return context
 
 
+def record_compare_start(compare_db, request, src_id, dst_id, func_name):
+    try:
+        com = DBCompareDBResults.objects.get(compare_dbs=compare_db, func_call=func_name)
+        last_comp = (datetime.now(central) - com.last_compared)
+        delta_limit_5 = (timedelta(seconds=60))
+        if com.status == 0 and last_comp < delta_limit_5:
+            messages.error(request, "Try again in 5 min! There is already a background process comparing the same DB!")
+            return HttpResponseRedirect(reverse('dbs:compare_db_results', kwargs={'id1': src_id, 'id2': dst_id}))
+        else:
+            com.status = 0
+            com.last_compared = datetime.now(central)
+            com.func_call = func_name
+            com.save()
+    except DBCompareDBResults.DoesNotExist:
+        com = DBCompareDBResults()
+        com.compare_dbs = compare_db
+        com.func_call = func_name
+        com.last_compared = datetime.now(central)
+        com.status = 0
+        com.save()
+
+
 class DbCompareResultView(PermissionRequiredMixin, ListView):
     permission_required = add_instance
     model = DBInstance
@@ -172,6 +193,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
             db_compare = DBCompare.objects.filter(src_db=src_db, dst_db=dst_db)
             if len(db_compare) > 0:
                 db_compare_entry = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id)
+                context['compare_dbs'] = db_compare[0].id
                 if len(db_compare_entry) > 0:
                     context['last_update'] = db_compare_entry.latest('added_on').added_on
                 context['db_compare_res_bulk'] = DBTableCompare.objects.filter(compare_dbs=db_compare[0].id).exclude(
@@ -197,27 +219,46 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         src_id = None
         dst_id = None
+        src_db = None
+        dst_db = None
+        compare_db = None
         if request.method == 'POST':
             try:
-                src_id = self.kwargs['id1']
-                dst_id = self.kwargs['id2']
-                src_db = DBInstance.objects.get(id=src_id)
-                dst_db = DBInstance.objects.get(id=dst_id)
-            except:
-                pass
+                if len(kwargs) > 1:
+                    src_id = self.kwargs['id1']
+                    dst_id = self.kwargs['id2']
+                    src_db = DBInstance.objects.get(id=src_id)
+                    dst_db = DBInstance.objects.get(id=dst_id)
+            except DBInstance.DoesNotExist:
+                messages.success(request, 'Something went wrong! Src_DB Dst_DB can\'t be mapped. Contact Admin')
+            try:
+                if len(kwargs) > 1:
+                    ob = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
+                    ob.last_compared = datetime.now(central)
+                    ob.save()
+                    compare_db = ob
+            except DBCompare.DoesNotExist:
+                compare_db = DBCompare()
+                compare_db.src_db = src_db
+                compare_db.dst_db = dst_db
+                compare_db.last_compared = datetime.now(central)
+                compare_db.save()
             if self.request.POST.get('compare'):
                 if request.user.has_perm('dbs.can_compare_db'):
                     src_id = self.request.POST.get('src_db')
                     dst_id = self.request.POST.get('dst_db')
+                    try:
+                        src_db = DBInstance.objects.get(id=src_id)
+                        dst_db = DBInstance.objects.get(id=dst_id)
+                    except DBInstance.DoesNotExist:
+                        messages.success(request, 'Something went wrong! Src_DB Dst_DB can\'t be mapped. Contact Admin')
                     if src_id is None or dst_id is None:
                         messages.error(request, "Make sure to select source and destination DB!")
                         return HttpResponseRedirect(reverse('dbs:compare_db'))
                     if src_id is not None and dst_id is not None and src_id == dst_id:
                         messages.error(request, "Cannot compare same DB!")
                         return HttpResponseRedirect(reverse('dbs:compare_db'))
-                    src_db = DBInstance.objects.get(id=src_id)
-                    dst_db = DBInstance.objects.get(id=dst_id)
-                    compare_db = None
+
                     try:
                         ob = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
                         ob.last_compared = datetime.now(central)
@@ -229,50 +270,46 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                         compare_db.dst_db = dst_db
                         compare_db.last_compared = datetime.now(central)
                         compare_db.save()
-                    try:
-                        com = DBCompareDBResults.objects.get(compare_dbs=compare_db)
-                        last_comp = (datetime.now(central) - com.last_compared)
-                        delta_limit_5 = (timedelta(seconds=5))
-                        if com.status == 0 and last_comp < delta_limit_5:
-                            messages.error(request, "Try again in 5 min! There is already a background process comparing the same DB!")
-                            return HttpResponseRedirect(reverse('dbs:compare_db_results', kwargs={'id1': src_id, 'id2': dst_id}))
-                        else:
-                            com.status = 0
-                            com.last_compared = datetime.now(central)
-                            com.save()
-                    except DBCompareDBResults.DoesNotExist:
-                        com = DBCompareDBResults()
-                        com.compare_dbs = compare_db
-                        com.last_compared = datetime.now(central)
-                        com.status = 0
-                        com.save()
 
                     args = (request.user, src_db, dst_db, compare_db)
-                    queue = get_queue('high')
-                    row_compare = queue.enqueue(compare_db_rows, args=args)
-                    queue = get_queue('low')
-                    queue.enqueue(compare_db_views, args=args)
-                    queue.enqueue(compare_db_seq, args=args)
-                    queue.enqueue(compare_db_fk, args=args)
-                    queue.enqueue(compare_db_trig, args=args)
-                    queue.enqueue(compare_db_ind, args=args)
-                    data_type_compare = queue.enqueue(compare_db_data_types, args=args, depends_on=row_compare)
-                    queue.enqueue(compare_db_tables_fk_ui, args=args, depends_on=data_type_compare)
-                    # compare_db_tables_fk_ui(request.user, src_db, dst_db, compare_db)
 
-                    messages.info(request, 'DB table row comparisons started!')
+                    queue_high = get_queue('high')
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_rows.__name__)
+                    queue_high.enqueue(compare_db_rows, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_data_types.__name__)
+                    data_type_compare = queue_high.enqueue(compare_db_data_types, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_for_geom_module_id.__name__)
+                    queue_high.enqueue(compare_db_for_geom_module_id, args=args, depends_on=data_type_compare)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_tables_fk_ui.__name__)
+                    queue_high.enqueue(compare_db_tables_fk_ui, args=args, depends_on=data_type_compare)
+
+                    queue_low = get_queue('low')
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_views.__name__)
+                    queue_low.enqueue(compare_db_views, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_seq.__name__)
+                    queue_low.enqueue(compare_db_seq, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_fk.__name__)
+                    queue_low.enqueue(compare_db_fk, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_trig.__name__)
+                    queue_low.enqueue(compare_db_trig, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_ind.__name__)
+                    queue_low.enqueue(compare_db_ind, args=args)
+
+                    # compare_db_for_geom_module_id(request.user, src_db, dst_db, compare_db)
+
+                    messages.success(request, 'DB table row comparisons started!')
                 else:
-                    messages.info(request, 'Permission required to compare DB!!')
-                return HttpResponseRedirect(reverse('dbs:compare_dbs', kwargs={'id1': src_id, 'id2': dst_id}))
+                    messages.error(request, 'Permission required to compare DB!!')
+                # return HttpResponseRedirect(reverse('dbs:compare_dbs', kwargs={'id1': src_id, 'id2': dst_id}))
             if self.request.POST.get('truncate'):
                 if request.user.has_perm('dbs.can_truncate_table_content'):
                     table_name = self.kwargs['table_name']
-                    dst_db = DBInstance.objects.get(id=dst_id)
+
                     truncate_table.delay(request.user, dst_db, table_name)
                     # delete(dst_db=dst_db).execute_it(table_name)
-                    messages.info(request, 'Truncate initiated for the DB table {}'.format(table_name))
+                    messages.success(request, 'Truncate initiated for the DB table {}'.format(table_name))
                 else:
-                    messages.info(request, 'Truncate permission required!!')
+                    messages.success(request, 'Truncate permission required!!')
             if self.request.POST.get('copy'):
                 if request.user.has_perm('dbs.can_copy_table_content'):
                     row_count = self.kwargs['row_count']
@@ -282,9 +319,9 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                         copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
                         # xerox(src_db=src_db, dst_db=dst_db, table_name=table_name,
                         #       table_row_count=row_count, upper_bound=upper_bound, commit_each=True).execute_it()
-                    messages.info(request, 'Copy initiated for the DB table {}'.format(table_name))
+                    messages.success(request, 'Copy initiated for the DB table {}'.format(table_name))
                 else:
-                    messages.info(request, 'Copy permission required!!')
+                    messages.success(request, 'Copy permission required!!')
             if self.request.POST.get('bulkCopy'):
                 if request.user.has_perm('dbs.can_bulk_import'):
                     bulk_tables = request.POST.getlist('bulkTables')
@@ -295,21 +332,22 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                         batch_size = 100000
                         for upper_bound in range(0, int(row_count), batch_size):
                             copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
-                    messages.info(request, 'Bulk copy initiated!')
+                    messages.success(request, 'Bulk copy initiated!')
                 else:
-                    messages.info(request, 'Bulk copy permission required!!')
+                    messages.success(request, 'Bulk copy permission required!!')
             if self.request.POST.get('disableTrigger'):
                 if request.user.has_perm('dbs.can_disable_triggers'):
-                    triggers(dst_db).execute_it(ty='DISABLE')
-                    messages.info(request, 'All the triggers are disabled!')
+                    # disable_all_postgre_triggers.delay(dst_db, compare_db)
+                    disable_all_postgre_triggers(dst_db, compare_db)
+                    messages.success(request, 'Process initialed to disable all the triggers!')
                 else:
-                    messages.info(request, 'Disable Trigger permission required!!')
+                    messages.success(request, 'Disable Trigger permission required!!')
             if self.request.POST.get('enableTrigger'):
                 if request.user.has_perm('dbs.can_enable_triggers'):
-                    triggers(dst_db).execute_it(ty='ENABLE')
-                    messages.error(request, 'All the triggers are enabled!')
+                    enable_all_postgre_triggers.delay(dst_db, compare_db)
+                    messages.error(request, 'Process initialed to enable all the triggers!')
                 else:
-                    messages.info(request, 'Enable Trigger permission required!!')
+                    messages.success(request, 'Enable Trigger permission required!!')
 
         return HttpResponseRedirect(reverse('dbs:compare_db_results', kwargs={'id1': src_id, 'id2': dst_id}))
 

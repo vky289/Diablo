@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
+    'channels',
 
     #inner app
     'app',
@@ -94,6 +95,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'diablo.wsgi.application'
 
+ASGI_APPLICATION = 'diablo.asgi.application'
+
+CELERY_BROKER_URL = 'redis://' + env.str('REDIS_HOST') + ':' + str(env.int('REDIS_PORT'))
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -106,8 +110,23 @@ RQ_QUEUES = {
     "default": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
     "high": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
     "low": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
+    "scheduler": {"HOST": env.str('REDIS_HOST'), "PORT": env.int('REDIS_PORT'), "DB": 0, "DEFAULT_TIMEOUT": 3600, },
 }
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        #'BACKEND': 'asgi_redis.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [(env.str('REDIS_HOST'), env.int('REDIS_PORT'))],
+            "channel_capacity": {
+                "http.request": 200,
+                "http.response!*": 10,
+                # re.compile(r"^websocket.send\!.+"): 20,
+            },
+        },
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

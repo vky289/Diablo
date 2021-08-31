@@ -15,7 +15,7 @@ from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerialize
 from utils.enums import DBObject, DbType
 from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
-    compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data
+    compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data, compare_db_for_geom_module_id, compare_db_tables_fk_ui
 from utils.compare_data import comparator
 
 from tempfile import NamedTemporaryFile
@@ -23,6 +23,10 @@ from django.utils.encoding import smart_str
 from django.http import FileResponse
 from utils.compare_database import any_db
 from django.core.signals import request_finished
+from pytz import timezone
+from datetime import datetime, timedelta
+
+central = timezone('US/Central')
 
 
 class DBInstanceListSet(viewsets.ModelViewSet):
@@ -265,6 +269,26 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
                 {key: key + " - Missing input."}
             )
 
+    def record_compare_start(self, compare_db, func_name):
+        try:
+            com = DBCompareDBResults.objects.get(compare_dbs=compare_db, func_call=func_name)
+            last_comp = (datetime.now(central) - com.last_compared)
+            delta_limit_5 = (timedelta(seconds=60))
+            if com.status == 0 and last_comp < delta_limit_5:
+                return JsonResponse(data={'SuccessMessage': 'Try again in 5 min! There is already a background process comparing the same DB!'})
+            else:
+                com.status = 0
+                com.last_compared = datetime.now(central)
+                com.func_call = func_name
+                com.save()
+        except DBCompareDBResults.DoesNotExist:
+            com = DBCompareDBResults()
+            com.compare_dbs = compare_db
+            com.func_call = func_name
+            com.last_compared = datetime.now(central)
+            com.status = 0
+            com.save()
+
     def put(self, request, *args, **kwargs):
         src_id = self.request.query_params.get('src_id')
         dst_id = self.request.query_params.get('dst_id')
@@ -291,26 +315,31 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
                 compare_db.src_db = src_db
                 compare_db.dst_db = dst_db
                 compare_db.save()
+            args = (request.user, src_db, dst_db, compare_db)
 
-            try:
-                com = DBCompareDBResults.objects.get(compare_dbs=compare_db)
-                if com.status == 0 and com.last_compared < (datetime.now() - datetime.timedelta(minutes=5)):
-                    return JsonResponse(data={'SuccessMessage': 'Try again in 5 min! There is already a background process comparing the same DB!'})
-            except DBCompareDBResults.DoesNotExist:
-                com = DBCompareDBResults()
-                com.compare_dbs = compare_db
-                com.save()
+            queue_high = get_queue('high')
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_rows.__name__)
+            queue_high.enqueue(compare_db_rows, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_data_types.__name__)
+            data_type_compare = queue_high.enqueue(compare_db_data_types, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_for_geom_module_id.__name__)
+            queue_high.enqueue(compare_db_for_geom_module_id, args=args, depends_on=data_type_compare)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_tables_fk_ui.__name__)
+            queue_high.enqueue(compare_db_tables_fk_ui, args=args, depends_on=data_type_compare)
 
-            queue = get_queue('high')
-            row_compare = queue.enqueue(compare_db_rows, args=(request.user, src_db, dst_db, compare_db))
-            queue.enqueue(compare_db_data_types, args=(request.user, src_db, dst_db, compare_db), depends_on=row_compare)
+            queue_low = get_queue('low')
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_views.__name__)
+            queue_low.enqueue(compare_db_views, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_seq.__name__)
+            queue_low.enqueue(compare_db_seq, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_fk.__name__)
+            queue_low.enqueue(compare_db_fk, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_trig.__name__)
+            queue_low.enqueue(compare_db_trig, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_ind.__name__)
+            queue_low.enqueue(compare_db_ind, args=args)
 
-            queue = get_queue('low')
-            queue.enqueue(compare_db_views, args=(request.user, src_db, dst_db, compare_db))
-            queue.enqueue(compare_db_seq, args=(request.user, src_db, dst_db, compare_db))
-            queue.enqueue(compare_db_fk, args=(request.user, src_db, dst_db, compare_db))
-            queue.enqueue(compare_db_ind, args=(request.user, src_db, dst_db, compare_db))
-            queue.enqueue(compare_db_trig, args=(request.user, src_db, dst_db, compare_db))
+
             return JsonResponse(data={'SuccessMessage': 'DB table row comparisons started!'})
         elif action == 'bulkImport':
             self.cant_be_empty('src_id', src_id)

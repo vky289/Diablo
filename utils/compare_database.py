@@ -55,20 +55,6 @@ class any_db:
                 obj.type = db_type
                 column_name = l_c.get('column_name')
                 obj.column_name = column_name
-                if column_name == 'GEOM':
-                    try:
-                        oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
-                        oob.geom = True
-                        oob.save()
-                    except DBTableCompare.DoesNotExist:
-                        pass
-                if l_c.get('column_name') == 'MODULE_ID':
-                    try:
-                        oob = DBTableCompare.objects.get(table_name=o_r, compare_dbs=self.compare_db)
-                        oob.module_id = True
-                        oob.save()
-                    except DBTableCompare.DoesNotExist:
-                        pass
                 obj.datatype = l_c.get('data_type')
                 obj.precision = l_c.get('precision')
                 if not obj.is_ui:
@@ -357,3 +343,22 @@ class any_db:
         p_data, p_col_names = scrapper(main_db=self.dst_db).crawl_db(table_name, int(table_row_count), pk_col)
 
         return o_data, o_col_names, p_data, p_col_names
+
+    def find_geom_module_id(self):
+        all_table_columns = DBTableColumnCompare.objects.filter(compare_dbs=self.compare_db)
+        for each_rows in all_table_columns:
+            column_name = each_rows.column_name
+            if column_name and column_name == 'GEOM':
+                try:
+                    oob = DBTableCompare.objects.get(table_name=each_rows.table_name, compare_dbs=self.compare_db)
+                    oob.geom = True
+                    oob.save()
+                except DBTableCompare.DoesNotExist:
+                    pass
+            if column_name and column_name == 'MODULE_ID':
+                try:
+                    oob = DBTableCompare.objects.get(table_name=each_rows.table_name, compare_dbs=self.compare_db)
+                    oob.module_id = True
+                    oob.save()
+                except DBTableCompare.DoesNotExist:
+                    pass

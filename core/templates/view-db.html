@@ -218,12 +218,12 @@
 <script type="text/javascript">
   $(document).on('click', '#btn-trash', function(e){
     e.preventDefault();
-    var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+    var token = '{{csrf_token}}';
     var bt_val = $(this).val().split('::');
     if(confirm("Are you sure?")) {
       $.ajax({
                type: "PUT",
-               headers: {"X-CSRFToken": $crf_token},
+               headers: {"X-CSRFToken": token},
                xhrFields: {
                  withCredentials: true
                },
@@ -241,11 +241,11 @@
   $(document).on('click', '#btn-pingDB', function(e){
     e.preventDefault();
     var $form = $(this).closest('form');
-    var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
+    var token = '{{csrf_token}}';
     var bt_val = $(this).val().split('::');
     $.ajax({
              type: "PUT",
-             headers: {"X-CSRFToken": $crf_token},
+             headers: {"X-CSRFToken": token},
              xhrFields: {
                withCredentials: true
              },

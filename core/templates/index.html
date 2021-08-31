@@ -7,19 +7,28 @@
 {% endblock stylesheets %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <div class="row mw-100">
-                <div class="col-xl float-xl-left">
-                    <div id="jobsExecuted" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+<div class="card" xmlns="http://www.w3.org/1999/html">
+    <button class="btn btn-secondary" type="button" data-toggle="collapse"
+            data-target="#collapseResults" aria-expanded="false" aria-controls="collapseResults">
+        <b>Dashboard</b> <i class="fa fa-gratipay"></i></button>
+    <div class="collapse" id="collapseResults">
+        <div class="card-body">
+            <div class="row mw-100">
+                    <div class="col-xl float-xl-left">
+                        <div id="jobsExecuted" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+                    </div>
+                <div class="col-xl float-xl-right">
+                    <div id="realDataTableCompared" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
                 </div>
+            </div>
+            <p/>
+            <div class="row mw-100">
                 <div class="col-xl float-xl-right">
                     <div id="graphTableProcessed" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
                 </div>
-        </div>
-        <div class="row mw-100">
-            <div class="col-xl float-xl-left">
-                <div id="postRequest" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+                <div class="col-xl float-xl-left">
+                    <div id="postRequest" style="min-width: 110px; height: 400px; margin: 0 auto"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -36,40 +45,72 @@
   $(function () {
     $('#jobsExecuted').highcharts({
          chart: {
-           type: 'line'
+             plotBackgroundColor: null,
+             plotBorderWidth: null,
+             plotShadow: false,
+             type: 'pie'
          },
          title: {
-           text: 'DB Comparison'
+             text: 'DB Comparison'
          },
-        xAxis: {
-           categories: [ {% for entry in data_compared_req %}'{{ entry.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}]
+        accessibility: {
+          point: {
+              valueSuffix: '%'
+          }
         },
-         yAxis: {
-           min: 0,
-           title: {
-             text: 'Counts'
-           }
-         },
          tooltip: {
-           headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-           pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                        '<td style="padding:0"><b>{point.y}</b></td></tr>',
-           footerFormat: '</table>',
-           shared: true,
-           useHTML: true
+             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
          },
          plotOptions: {
-             series: {
-                 label: {
-                     connectorAllowed: false
-                 },
-                 pointStart: 0
+             pie: {
+                 allowPointSelect: true,
+                     cursor: 'pointer',
+                     dataLabels: {
+                     enabled: false,
+                         format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                    },
+                    showInLegend: true
              }
          },
         series: [{
-          name: 'DB compared',
-          data: [{% for entry in data_compared_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-        color: 'skyblue'
+          name: 'Months',
+          colorByPoint: true,
+          data: [{% for entry in data_compared_req %}{ name: '{{ entry.name }}', y: {{entry.y}} }{% if not forloop.last %}, {%endif %}{% endfor %}]
+        }]
+       });
+    $('#realDataTableCompared').highcharts({
+         chart: {
+             plotBackgroundColor: null,
+             plotBorderWidth: null,
+             plotShadow: false,
+             type: 'pie'
+         },
+         title: {
+             text: 'Data Comparison'
+         },
+        accessibility: {
+          point: {
+              valueSuffix: '%'
+          }
+        },
+         tooltip: {
+             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+         },
+         plotOptions: {
+             pie: {
+                 allowPointSelect: true,
+                     cursor: 'pointer',
+                     dataLabels: {
+                     enabled: false,
+                         format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                    },
+                    showInLegend: true
+             }
+         },
+        series: [{
+          name: 'Months',
+          colorByPoint: true,
+          data: [{% for entry in real_table_data_req %}{ name: '{{ entry.name }}', y: {{entry.y}} }{% if not forloop.last %}, {%endif %}{% endfor %}]
         }]
        });
       $('#graphTableProcessed').highcharts({
@@ -143,15 +184,12 @@
           }
       },
       series: [{
-          name: 'Total Post',
-          data: [{% for entry in post_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            }, {
-          name: 'Total Access',
-                  data: [{% for entry in get_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-          },{
-              name: '# Data Compared',
-                  data: [{% for entry in data_compared_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-          }]
+            name: 'API Access',
+            data: [{% for entry in api_calls %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+              }, {
+                name: 'Total Request',
+                data: [{% for entry in tot_req %}{{ entry.y }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                }]
   });
   });
 </script>

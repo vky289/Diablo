@@ -196,7 +196,7 @@ class scrapper:
                 if fetch_rows is not None and len(fetch_rows) > 0:
                     prim_key = fetch_rows[0][0]
         except Exception as e:
-            self.log.error("Something wrong with the query - DB Type {} - {} - find PK".format(str(self.db_type), str(e)))
+            self.log.error("Something wrong with the query - DB Type {} - {} - find PK of table {} ".format(str(self.db_type), str(e), str(table_name)))
         finally:
             if self.conn is not None:
                 self.conn.close()
@@ -258,7 +258,7 @@ class scrapper:
                     for rows in fetch_rows:
                         ui_key.add(rows[0])
         except Exception as e:
-            self.log.error("Something wrong with the query - DB Type {} - {} - find PK".format(str(self.db_type), str(e)))
+            self.log.error("Something wrong with the query - DB Type {} - {} - find UI".format(str(self.db_type), str(e)))
         finally:
             if self.conn is not None:
                 self.conn.close()

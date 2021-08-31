@@ -73,6 +73,7 @@ class DBCompareDBResults(models.Model):
     id = models.AutoField(primary_key=True)
     compare_dbs = models.ForeignKey(DBCompare, on_delete=models.CASCADE, related_name='s_c_db_d_c_db')
     last_compared = models.DateTimeField(auto_now_add=True, blank=True)
+    func_call = models.CharField(max_length=400, blank=False, default=None)
     status = models.IntegerField(null=True, default=0)
 
     def __str__(self):
@@ -80,7 +81,7 @@ class DBCompareDBResults(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['compare_dbs', 'last_compared', 'status', ]),
+            models.Index(fields=['func_call', 'compare_dbs', 'last_compared', 'status', ]),
         ]
 
 

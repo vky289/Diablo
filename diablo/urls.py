@@ -23,6 +23,7 @@ from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSe
 from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView, DBInstanceActionView
 from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet
 from rest_framework import permissions
+from rest_framework.authtoken.views import obtain_auth_token
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -53,6 +54,7 @@ urlpatterns = [
     url(r'inbox/notifications/', include(notifications.urls, namespace='notifications')),
     path(r'dbs/', include('app.dbs.urls'), name='dbs'),
     # Rest API's
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path(r'api/v1/', include((router.urls, 'diablo'), namespace='api')),
     path(r'api/v1/dbInstanceAction/<slug:action>', DBInstanceActionView.as_view(), name="dbInstanceAction"),
     path(r'api/v1/dbTableAction/<slug:action>', DBTableActionView.as_view(), name="dbTableAction"),

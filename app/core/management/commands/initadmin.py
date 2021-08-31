@@ -4,6 +4,11 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from app.core.models import SYSetting
+from diablo import scheduled_tasks
+from redis import Redis
+import django_rq
+
+redis = Redis(host="diablo-redis", db=0, port=6379, socket_connect_timeout=10, socket_timeout=10)
 
 
 class Command(BaseCommand):
@@ -32,3 +37,15 @@ class Command(BaseCommand):
             sy_set.name = 'COL_COMPARE_MAX'
             sy_set.value = '1000'
             sy_set.save()
+
+        # To-Do: Cleanup RQQueue Jobs
+        # scheduler2 = django_rq.get_scheduler('scheduler')
+        #
+        # for e_jobs in scheduler2.get_jobs():
+        #     if e_jobs.func_name != 'diablo.scheduled_tasks.clean_up_rq_tab':
+        #         scheduler2.cron(
+        #             cron_string='*/5 * * * *',
+        #             func=scheduled_tasks.clean_up_rq_tab,
+        #             repeat=None
+        #         )
+        #         print('Cron Job to cleanup r-queue\'s initiated')

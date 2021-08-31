@@ -18,6 +18,8 @@ services:
     restart: always
     container_name: diablo-db
     environment:
+      TZ: 'GMT-5'
+      PGTZ: 'GMT-5'
       POSTGRES_PASSWORD: diablo
       POSTGRES_USER: diablo
       POSTGRES_DB: diablo

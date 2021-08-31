@@ -8,7 +8,7 @@
 {% block stylesheets %}
 
 <!-- MDBootstrap Datatables  -->
-<style>
+<style xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
     .modal-body{
         height: 80vh;
         overflow-y: auto;
@@ -25,57 +25,108 @@
     <div class="col-xl">
         <div class="card">
             <div class="card-header">
-                <div class="container  bg-neutral text-darker font-weight-bold mw-100 justify-content-end">
-                    <p class="float-left">
-                    <div class="form-group align-left mw-100">
-                        {% if src_db_v %}
-                        <i class="fa fa-angle-double-up" aria-hidden="true"></i>
-                        {{ src_db_v.name }} - {{ src_db_v.username }} @ {{ src_db_v.host }} : {{ src_db_v.port }}
-                        (<img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
-                        {% endif %}
-                    </div>
-                    <p class="float-right">
-                    <div class="form-group align-right mw-100">
-                        {% if dst_db_v %}
-                        <i class="fa fa-angle-double-down" aria-hidden="true"></i>
-                        {{ dst_db_v.name }} - {{ dst_db_v.username }} @ {{ dst_db_v.host }} : {{ dst_db_v.port }}
-                        (<img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
-                        {% endif %}
-                    </div>
+                <div class="container bg-neutral text-darker font-weight-bold mw-100 justify-content-end">
+                    <p class="text-darker font-weight-bold">
+                            {% if src_db_v %}
+                            <i class="fa fa-angle-double-up" aria-hidden="true"></i>
+                            {{ src_db_v.name }} - {{ src_db_v.username }} @ {{ src_db_v.host }} : {{ src_db_v.port }}
+                            (<img src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
+                            {% endif %}
                     </p>
+                    <p class="text-darker font-weight-bold">
+                            {% if dst_db_v %}
+                            <i class="fa fa-angle-double-down" aria-hidden="true"></i>
+                            {{ dst_db_v.name }} - {{ dst_db_v.username }} @ {{ dst_db_v.host }} : {{ dst_db_v.port }}
+                            (<img src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40" alt="{{dst_db_v.type}}">)
+                            {% endif %}
                     </p>
                 </div>
                 {% if last_update is not None %}
                 <p class="float-right"> <h4><strong>Last Compared: {{ last_update|print_timestamp }}</strong></h4></p>
                 {% endif %}
-                <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
-                    <a href="{% url 'dbs:compare_db_results' id1 id2 %}">
-                        <button type="button" class="btn btn-info">Update Results</button>
-                    </a>
-                    <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare Again!</button>
-                    {% csrf_token %}
-                    <input class="form-check-input" type="text" name="src_db"
-                           value="{{ id1 }}" hidden>
-                    <input class="form-check-input" type="text" name="dst_db"
-                           value="{{ id2 }}" hidden>
-
-                    <div class="justify-content-end">
-                        <p class="float-right">
-                            <button class="btn btn-success" type="submit" name="enableTrigger" value="enableTrigger">Enable All
-                            Trigger
-                            </button>
-                            <button class="btn btn-warning" type="submit" name="disableTrigger" value="disableTrigger">Disable
-                                All Trigger
-                            </button>
+                <div class="card-header-pills">
+                    <p>
+                        <button class="btn btn-secondary" type="button" data-toggle="collapse"
+                                data-target="#collapseResults" aria-expanded="false" aria-controls="collapseResults">
+                            <b>Job Status </b> <i class="fa fa-sort-down"></i>
+                        </button>
+                    </p>
+                    <div class="collapse" id="collapseResults">
+                        <button id="bt-refresh-res" value= "{{ compare_dbs }}" class="btn btn-primary"
+                                type="button"><i class="fa fa-recycle" aria-hidden="true"></i></button>
+                        <div class="card card-body">
+                            <table>
+                                <tr>
+                                    <th>Jobs</th>
+                                    <th>Status</th>
+                                </tr>
+                                <tr>
+                                    <td>Table Rows</td>
+                                    <td><i id="compare_db_rows" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Table Data Types</td>
+                                    <td><i id="compare_db_data_types" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Table FK/UI's</td>
+                                    <td><i id="compare_db_tables_fk_ui" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Views</td>
+                                    <td><i id="compare_db_views" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Indexes</td>
+                                    <td><i id="compare_db_ind" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Sequences</td>
+                                    <td><i id="compare_db_seq" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Triggers</td>
+                                    <td><i id="compare_db_trig" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>FK's</td>
+                                    <td><i id="compare_db_fk" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header-tabs">
+                    <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
+                        <div class="justify-content-start">
                             <p class="float-left">
+                            <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare Again!</button>
+                            </p>
+                            {% csrf_token %}
+                            <input class="form-check-input" type="text" name="src_db"
+                                   value="{{ id1 }}" hidden>
+                            <input class="form-check-input" type="text" name="dst_db"
+                                   value="{{ id2 }}" hidden>
+                            <p class="float-right">
                                 <a href="" data-target="#bulkImportModal" data-toggle="modal">
                                     <button class="btn btn-success" type="button" name="bulkImport" value="bulkImport">Bulk Import
-                                </button></a>
+                                    </button></a>
                             </p>
-                        </p>
-                    </div>
-                </form>
+                        </div>
+                        <div class="justify-content-end">
+                            <p class="float-right">
+                                <button class="btn btn-success" type="submit" name="enableTrigger" value="enableTrigger">Enable All
+                                Trigger
+                                </button>
+                                <button class="btn btn-warning" type="submit" name="disableTrigger" value="disableTrigger">Disable
+                                    All Trigger
+                                </button>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </div>
+
             <nav>
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
                     <a class="nav-item nav-link active" id="nav-home-tab" data-toggle="tab" href="#table_rows" role="tab"
@@ -655,10 +706,79 @@
 
     function booleanFormatter(value, row) {
         if (value === true) {
-            return "<i class='fa fa-check'></i>"
+            return "<i class='fa fa-check' style=\"color:green\"></i>"
         } else {
             return "<i class='fa fa-times' style=\"color:red\"></i>"
         }
     }
+</script>
+<script type="text/javascript">
+    function make_status_call(bt_val) {
+        var all_list = ['#compare_db_rows', '#compare_db_data_types', '#compare_db_tables_fk_ui',
+                        '#compare_db_views', '#compare_db_ind', '#compare_db_seq',
+                        '#compare_db_trig', '#compare_db_fk'];
+        function reload_change_icon(id_name) {
+            document.querySelector(id_name).classList.remove('fa-times');
+            document.querySelector(id_name).classList.add('fa-spinner');
+            document.querySelector(id_name).classList.add('fa-spin');
+            document.querySelector(id_name).style = null;
+        }
+
+        for(let v=0; v<all_list.length;v++) {
+            reload_change_icon(all_list[v]);
+        }
+
+        var loc = window.location;
+        var wsStart = 'ws://';
+        if (loc.protocol == 'https:') {
+            wsStart = 'wss://'
+        }
+        for(let v=0; v<all_list.length;v++) {
+            const socket = new WebSocket(wsStart + window.location.host + '/ws/ticks/');
+            const args = {"compare_ids": bt_val, "func_name":  all_list[v].replace('#', '')}
+            socket.onopen = function open() {
+                console.log('WebSockets connection created.');
+                this.send(JSON.stringify(args));
+            };
+            socket.onmessage = function (event) {
+                if(event.data === "success") {
+                    document.querySelector(all_list[v]).classList.remove('fa-spinner');
+                    document.querySelector(all_list[v]).classList.remove('fa-spin');
+                    document.querySelector(all_list[v]).classList.remove('fa-minus-square');
+                    document.querySelector(all_list[v]).classList.remove('fa-question-circle');
+                    document.querySelector(all_list[v]).classList.add('fa-check');
+                    document.querySelector(all_list[v]).style = 'color: green;';
+                }
+                if(event.data === "failure") {
+                    document.querySelector(all_list[v]).classList.remove('fa-spinner');
+                    document.querySelector(all_list[v]).classList.remove('fa-spin');
+                    document.querySelector(all_list[v]).classList.remove('fa-minus-square');
+                    document.querySelector(all_list[v]).classList.remove('fa-question-circle');
+                    document.querySelector(all_list[v]).classList.add('fa-times');
+                    document.querySelector(all_list[v]).style = 'color: red;';
+                }
+            };
+            socket.onerror = function(err) {
+                console.error('Socket encountered error: ', err.message, 'Closing socket');
+                document.querySelector(all_list[v]).classList.remove('fa-spinner');
+                document.querySelector(all_list[v]).classList.remove('fa-spin');
+                document.querySelector(all_list[v]).classList.add('fa-question-circle');
+                document.querySelector(all_list[v]).style = 'color: orange;';
+            };
+            socket.onclose = function () {
+                console.log('WebSockets connection closed.');
+                socket.close();
+            };
+        }
+    }
+    $(document).on('click', '#bt-refresh-res', function(e) {
+        e.preventDefault();
+        var bt_val = $(this).val();
+        make_status_call(bt_val);
+    });
+    window.onload = function() {
+        var bt_val = document.getElementById("bt-refresh-res").value;
+        make_status_call(bt_val);
+    };
 </script>
 {% endblock javascripts %}

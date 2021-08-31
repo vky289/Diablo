@@ -102,9 +102,9 @@ def profile_user(request):
                 user.first_name = firstname
                 user.last_name = lastname
                 user.save()
-                messages.info(request, 'Saved successfully!')
+                messages.success(request, 'Saved successfully!')
                 success = True
             except User.DoesNotExist:
-                messages.info(request, 'User Doesnt found')
+                messages.success(request, 'User Doesnt found')
 
     return render(request, "page-user.html", {"form": form, "success": success})
