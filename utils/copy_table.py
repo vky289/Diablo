@@ -77,7 +77,7 @@ class xerox:
             for i in range(0, len(data), divide_by):
                 self.insert_rows(data[i: i + divide_by], col_names, self.commit_each)
                 # self.insert_rows.delay(data[i: i + divide_by], col_names)
-            send_notification(self.user, "DB {} -> {} table content copied - {}".format(self.src_db.name, self.dst_db.name, self.table_name))
+            send_notification(self.user, "DB {} -> {} table content copied - {} - from {} to {}".format(self.src_db.name, self.dst_db.name, self.table_name, self.upper_bound, self.table_row_count))
         except Exception as e:
-            send_notification(self.user, "DB {} -> {} exception occurred during copy of table - {}- {}".format(self.src_db.name, self.dst_db.name,
+            send_notification(self.user, "DB {} -> {} exception occurred during copy of table - {} - {}".format(self.src_db.name, self.dst_db.name,
                                                                                                                self.table_name, e))
