@@ -1,5 +1,3 @@
-import datetime
-import json
 import os
 
 from django.http import HttpResponseBadRequest, HttpResponse, JsonResponse
@@ -9,7 +7,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from django_rq import get_queue
 
-from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare, DBCompareDBResults
+from app.dbs.models import DBInstance, DBCompare, DBObjectCompare, DBObjectFKCompare, DBTableCompare, DBTableColumnCompare, DBCompareDBResults, DBTableCompareTokens
 from app.dbs.serializers import DbObjectSerializer, DBFKSerializer
 from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerializer, DBInstanceSerializer, DBCompareSerializer
 from utils.enums import DBObject, DbType
@@ -17,11 +15,11 @@ from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
     compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data, compare_db_for_geom_module_id, compare_db_tables_fk_ui
 from utils.compare_data import comparator
+from app.core.models import SYSetting
+from app.dbs.tasks import real_table_data_compare
 
-from tempfile import NamedTemporaryFile
 from django.utils.encoding import smart_str
 from django.http import FileResponse
-from utils.compare_database import any_db
 from django.core.signals import request_finished
 from pytz import timezone
 from datetime import datetime, timedelta
@@ -46,7 +44,7 @@ class DBCompareListSet(viewsets.ModelViewSet):
     http_method_names = ['get', ]
 
     def get_queryset(self):
-        return self.queryset.order_by("-last_compared", "src_db", "dst_db")
+        return self.queryset.order_by("src_db", "dst_db", "-last_compared")
 
 
 class DBTableListSet(viewsets.ModelViewSet):
@@ -209,64 +207,118 @@ class DBInstanceActionView(generics.RetrieveUpdateAPIView):
             return JsonResponse(data)
 
 
+class TableResultDownload(generics.RetrieveUpdateAPIView):
+    serializer_class = DBTableCompareSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    queryset = DBTableCompare.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        token = self.kwargs.get('token')
+        if token is not None:
+            try:
+                file_for_token = DBTableCompareTokens.objects.get(token=token)
+
+                t_file = open(file_for_token.file_path, 'rb')
+                new_file_name = file_for_token.file_path.split('/')[-1]
+                response = FileResponse(t_file)
+                response['Content-Length'] = t_file.tell()
+                response['Content-type'] = 'application/octet-stream'
+                response['Content-Disposition'] = f'attachment; filename=%s' % smart_str(new_file_name)
+                return response
+            except DBTableCompareTokens.DoesNotExist:
+                pass
+
+        return JsonResponse(data={'SuccessMessage': 'Not found'})
+
+
 class DBTableActionView(generics.RetrieveUpdateAPIView):
     serializer_class = DBTableCompareSerializer
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = DBTableCompare.objects.all()
 
     def get(self, request, *args, **kwargs):
+        deferred = False
         src_id = self.request.query_params.get('src_id')
         dst_id = self.request.query_params.get('dst_id')
         table_name = self.request.query_params.get('table_name')
-        row_count = self.request.query_params.get('row_count')
-        unparsed_data = self.request.data.get('unparsed_value')
+        compare_list = self.request.query_params.get('compare_list')
+        compare_lis = None
+        if compare_list is not None or compare_list == '':
+            compare_lis = compare_list.split(',')
+            if len(compare_lis) == 1:
+                compare_lis = compare_lis[0]
+            else:
+                compare_lis = set(compare_lis)
 
-        self.cant_be_empty('dst_id', dst_id)
         action = self.kwargs.get('action')
         if action == 'compareRawData':
-            self.cant_be_empty('src_id', src_id)
-            self.cant_be_empty('table_name', table_name)
-            self.cant_be_empty('row_count', dst_id)
             try:
-                src_db = DBInstance.objects.get(id=src_id)
-                dst_db = DBInstance.objects.get(id=dst_id)
-            except DBInstance.DoesNotExist:
-                return HttpResponseBadRequest
-            try:
-                compared_data = comparator(request.user, src_db=src_db, dst_db=dst_db,
-                                       compare_db=DBCompare.objects.get(src_db=src_db, dst_db=dst_db)). \
-                    compare_data(table_name=table_name)
-            except RuntimeError as e:
-                return JsonResponse(data={'SuccessMessage': str(e)}, status=501)
+                self.cant_be_empty('src_id', src_id)
+                self.cant_be_empty('table_name', table_name)
+                self.cant_be_empty('dst_id', dst_id)
+                try:
+                    src_db = DBInstance.objects.get(id=src_id)
+                    dst_db = DBInstance.objects.get(id=dst_id)
+                except DBInstance.DoesNotExist:
+                    return HttpResponseBadRequest
+                try:
+                    com_db = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
+                    table_compare_record = DBTableCompare.objects.get(compare_dbs=com_db, table_name=table_name)
+                    table_row_count = table_compare_record.src_row_count
+                    table_compare_max = 100000
 
-            newFileName = table_name+ '_' + \
-                          str(datetime.datetime.now()).replace(' ',  '_') \
-                              .replace('-', '_') \
-                              .replace(':', '_')
+                    try:
+                        cols = SYSetting.objects.get(name="COL_COMPARE_MAX")
+                        table_compare_max = cols.value
+                        table_compare_max = int(table_compare_max)
+                    except SYSetting.DoesNotExist:
+                        pass
 
-            try:
-                tfile = NamedTemporaryFile(delete=False, prefix=newFileName, suffix='.json', )
-                with open(tfile.name, 'w+') as fi:
-                    fi.write(json.dumps(compared_data, indent=4, sort_keys=True))
-                tfile.flush()
-                tfile.read()
-                response = FileResponse(open(tfile.name, 'rb'))
-                response['Content-Length'] = tfile.tell()
-                response['Content-type'] = 'application/octet-stream'
-                response['Content-Disposition'] = f'attachment; filename=%s' % smart_str(newFileName + '.json')
-                return response
-            finally:
-                if request_finished:
-                    os.remove(tfile.name)
+                    if table_row_count >= int(table_compare_max):
+                        deferred = True
+                except DBCompare.DoesNotExist:
+                    return JsonResponse(data={'SuccessMessage': 'Can\'t find db compare reference'}, status=501)
+
+                tfile = None
+                try:
+                    if not deferred:
+                        tfile, new_file_name = comparator(request.user, src_db=src_db, dst_db=dst_db,
+                                                          compare_db=com_db). \
+                            compare_data(table_name=table_name, pk_col=compare_lis, table_row_count=table_row_count)
+
+                        obj = DBTableCompare.objects.get(compare_dbs=DBCompare.objects.get(src_db=src_db, dst_db=dst_db), table_name=table_name)
+                        if obj.last_compared_file_loc is not None:
+                            os.remove(obj.last_compared_file_loc)
+                        obj.last_compared_file_loc = tfile.name
+                        obj.save()
+
+                        response = FileResponse(open(tfile.name, 'rb'))
+                        response['Content-Length'] = tfile.tell()
+                        response['Content-type'] = 'application/octet-stream'
+                        response['Content-Disposition'] = f'attachment; filename=%s' % smart_str(new_file_name + '.json')
+                        return response
+                    else:
+                        real_table_data_compare.delay(request.user, src_db=src_db, dst_db=dst_db,
+                                                      com_db=com_db, table_name=table_name, compare_list=compare_lis, table_row_count=table_row_count)
+                        return JsonResponse(data={'SuccessMessage': 'Process started, check back in Notification section'}, status=400)
+                except RuntimeError as e:
+                    return JsonResponse(data={'SuccessMessage': str(e)}, status=501)
+                finally:
+                    if tfile is not None and request_finished:
+                        os.remove(tfile.name)
+
+                return JsonResponse(data={'SuccessMessage': 'Something went wrong'}, status=200)
+            except ValidationError as e:
+                return JsonResponse(data={'SuccessMessage': e.args[0]}, status=400)
         return render(request, "page-405.html", status=405)
 
     def pre_save(self, request, *args, **kwargs):
         pass
 
     def cant_be_empty(self, key, value):
-        if value is None or len(value) == 0:
+        if value is None or len(value) == 0 or value == 'undefined':
             raise ValidationError(
-                {key: key + " - Missing input."}
+                key + " - Missing input."
             )
 
     def record_compare_start(self, compare_db, func_name):

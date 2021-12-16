@@ -100,7 +100,7 @@
                     <form action="{% url 'dbs:compare_db_results' id1 id2 %}" method="post">
                         <div class="justify-content-start">
                             <p class="float-left">
-                            <button class="btn btn-warning" type="submit" name="compare" value="compare">Compare Again!</button>
+                            <button class="btn btn-warning btn-outline-danger" type="submit" name="compare" value="compare">Compare Again!</button>
                             </p>
                             {% csrf_token %}
                             <input class="form-check-input" type="text" name="src_db"
@@ -127,7 +127,7 @@
                 </div>
             </div>
 
-            <nav>
+            <nav class="nav nav-pills nav-tabs nav-fill flex-lg-row">
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
                     <a class="nav-item nav-link active" id="nav-home-tab" data-toggle="tab" href="#table_rows" role="tab"
                        aria-controls="table_rows"
@@ -170,14 +170,15 @@
                             <caption>Table Comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-formatter="extraInfoFormatterTable" data-field="table_name" data-sortable="true" scope="col">Table Name</th>
+                                    <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter"
+                                        data-formatter="extraInfoFormatterTable" scope="col">Table Name</th>
                                     <th data-formatter="extraInfoFormatter" scope="col">Feedback</th>
                                     <th data-field="src_row_count" data-sortable="true"
-                                        data-footer-formatter="footerSrcFormatter" scope="col">Src # <img
+                                        data-footer-formatter="footerSrcCountFormatter" scope="col">Src # <img
                                             src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
                                                          alt="{{src_db_v.type}}"></th>
                                     <th data-field="dst_row_count" data-sortable="true"
-                                        data-footer-formatter="footerSrcFormatter" scope="col">Dst # <img
+                                        data-footer-formatter="footerDstCountFormatter" scope="col">Dst # <img
                                             src="{% static 'assets/img/' %}{{dst_db_v.type}}.png" width="40" height="40"
                                                          alt="{{dst_db_v.type}}"></th>
                                     <th data-field="table_name" data-formatter="operationFormatter" scope="col">Action</th>
@@ -204,7 +205,7 @@
                             <caption>View comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-field="table_name" data-sortable="true"
+                                    <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter"
                                         scope="col">View Name</th>
                                     <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                         data-footer-formatter="footerSrcFormatter" scope="col">Src <img
@@ -237,7 +238,7 @@
                             <caption>Index comparison</caption>
                             <thead>
                             <tr>
-                                <th data-field="table_name" data-sortable="true"
+                                <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter"
                                     scope="col">Index Name</th>
                                 <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                     data-footer-formatter="footerSrcFormatter" scope="col">Src <img
@@ -270,7 +271,7 @@
                             <caption>Sequence comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-field="table_name" data-sortable="true" scope="col">Sequence Name</th>
+                                    <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter" scope="col">Sequence Name</th>
                                     <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                         data-footer-formatter="footerSrcFormatter" scope="col">Src <img
                                             src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -302,7 +303,7 @@
                             <caption>Trigger comparison</caption>
                             <thead>
                             <tr>
-                                <th data-field="table_name" data-sortable="true" scope="col">Trigger Name</th>
+                                <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter" scope="col">Trigger Name</th>
                                 <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                     data-footer-formatter="footerSrcFormatter" scope="col">Src <img
                                         src="{% static 'assets/img/' %}{{src_db_v.type}}.png" width="40" height="40"
@@ -334,7 +335,8 @@
                             <caption>FK comparison</caption>
                             <thead>
                                 <tr>
-                                    <th data-field="const_name" data-sortable="true" scope="col">Constraint Name</th>
+                                    <th data-field="const_name" data-sortable="true" data-footer-formatter="idFormatter" scope="col">Constraint
+                                        Name</th>
                                     <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
                                         data-footer-formatter="footerSrcFormatter" scope="col">Src <img
                                             src="{% static 'assets/img/' %}{{src_db_v.type}}.png"
@@ -355,7 +357,7 @@
 <div class="modal fade" id="bulkImportModal">
     <div class="modal-dialog">
         <div class="modal-content bg-neutral text-darker">
-            <div class="p-3 mb-2 bg-neutral text-darker">
+            <div class="p-2 mb-2 bg-neutral text-darker">
                 <div class="modal-header">
                     <h5 class="modal-title text-info">Bulk Import Tool</h5>
                     <button type="button" class="close" data-dismiss="modal">X</button>
@@ -397,7 +399,7 @@
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
-                    <h3 class="modal-title" id="myModalLabel">Data <> Type</h3>
+                    <h3 class="modal-title" id="compareDataTypes">Data <> Type</h3>
                 </div>
                 <div class="modal-body">
                     -------
@@ -412,6 +414,34 @@
         </div>
     </div>
 </div>
+
+<!-- Model -->
+<div class="modal fade" id="dataCompareModal" tabindex="-1"
+     role="dialog" aria-labelledby="" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="p-3 mb-2 bg-neutral text-black-50">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="modal-title" id="CompareTableData">Compare Table Data</h3>
+                </div>
+                    <div class="modal-body">
+                        -------
+                        <p>
+                            <i class="tim-icons icon-atom" aria-label="loading"></i>
+                        </p>
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
@@ -425,65 +455,69 @@
     });
 </script>
 <script type="text/javascript">
-    $(document).on('click', '#btn-compare-real-data', function(e){
+    $(document).on('click', '#compareData', function(e){
         e.preventDefault();
         var $crf_token = $('[name="csrfmiddlewaretoken"]').attr('value');
         var bt_val = $(this).val().split('::');
+        var selected_cols = [];
+        $('input[name="compare_list"]:checked').each(function () {
+            selected_cols.push(this.value);
+        });
         $.ajax({
-           type: "GET",
-           headers:{"X-CSRFToken": $crf_token},
-           xhrFields: {
-               withCredentials: true
-           },
-           url: "/api/v1/dbTableAction/compareRawData?table_name=" + bt_val[0]
-                + "&src_id="+ bt_val[1] + "&dst_id="+ bt_val[2] ,
-           data: {
-               unparsed_value: $(this).val()
-           },
-           xhr: function() {
-               var xhr = new XMLHttpRequest();
-               xhr.onreadystatechange = function() {
-                   if (xhr.readyState === 2) {
-                       if (xhr.status === 200) {
-                           xhr.responseType = "blob";
+                   type: "GET",
+                   headers:{"X-CSRFToken": $crf_token},
+                   xhrFields: {
+                       withCredentials: true
+                   },
+                   url: "/api/v1/dbTableAction/compareRawData?table_name=" + bt_val[0]
+                        + "&src_id="+ bt_val[1] + "&dst_id="+ bt_val[2] + "&compare_list=" + selected_cols,
+                   data: {
+                       unparsed_value: null
+                   },
+                   xhr: function() {
+                       var xhr = new XMLHttpRequest();
+                       xhr.onreadystatechange = function() {
+                           if (xhr.readyState === 2) {
+                               if (xhr.status === 200) {
+                                   xhr.responseType = "blob";
+                               } else {
+                                   xhr.responseType = "text";
+                               }
+                           }
+                       };
+                       return xhr;
+                   },
+                   success: function (result, status, xhr) {
+                       //Convert the Byte Data to BLOB object.
+                       var blob = new Blob([result], { type: "application/octetstream" });
+                       var filename = "";
+                       var disposition = xhr.getResponseHeader('Content-Disposition');
+                       if (disposition && disposition.indexOf('attachment') !== -1) {
+                           var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                           var matches = filenameRegex.exec(disposition);
+                           if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+                       }
+                       //Check the Browser type and download the File.
+                       var isIE = false || !!document.documentMode;
+                       if (isIE) {
+                           window.navigator.msSaveBlob(blob, fileName);
                        } else {
-                           xhr.responseType = "text";
+                           var url = window.URL || window.webkitURL;
+                           link = url.createObjectURL(blob);
+                           var a = $("<a />");
+                           a.attr("download", filename);
+                           a.attr("href", link);
+                           $("body").append(a);
+                           a[0].click();
+                           $("body").remove(a);
+                       }
+                   },
+                   error: function (xhr, textStatus, errorThrown) {
+                       if (xhr.status !== 200) {
+                           alert($.parseJSON(xhr.responseText).SuccessMessage);
                        }
                    }
-               };
-               return xhr;
-           },
-           success: function (result, status, xhr) {
-               //Convert the Byte Data to BLOB object.
-               var blob = new Blob([result], { type: "application/octetstream" });
-               var filename = "";
-               var disposition = xhr.getResponseHeader('Content-Disposition');
-               if (disposition && disposition.indexOf('attachment') !== -1) {
-                   var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                   var matches = filenameRegex.exec(disposition);
-                   if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
-               }
-               //Check the Browser type and download the File.
-               var isIE = false || !!document.documentMode;
-               if (isIE) {
-                   window.navigator.msSaveBlob(blob, fileName);
-               } else {
-                   var url = window.URL || window.webkitURL;
-                   link = url.createObjectURL(blob);
-                   var a = $("<a />");
-                   a.attr("download", filename);
-                   a.attr("href", link);
-                   $("body").append(a);
-                   a[0].click();
-                   $("body").remove(a);
-               }
-           },
-           error: function (xhr, textStatus, errorThrown) {
-               if (xhr.status !== 200) {
-                   alert($.parseJSON(xhr.responseText).SuccessMessage);
-               }
-           }
-       });
+               });
     });
     $(document).on('click', '#btn-copy', function(e){
         e.preventDefault();
@@ -492,34 +526,23 @@
         $.ajax({
            type: "PUT",
            headers:{"X-CSRFToken": $crf_token},
+           dataType: "json",
            xhrFields: {
                withCredentials: true
-           },
-           xhr: function() {
-               var xhr = new XMLHttpRequest();
-               xhr.onreadystatechange = function() {
-                   if (xhr.readyState === 2) {
-                       if (xhr.status === 200) {
-                           xhr.responseType = "blob";
-                       } else {
-                           xhr.responseType = "text";
-                       }
-                   }
-               };
-               return xhr;
            },
            url: "/api/v1/dbTableAction/copy?table_name=" + bt_val[0]
                 + "&row_count="+ bt_val[1] + "&src_id="+ bt_val[2] + "&dst_id="+ bt_val[3] ,
            data: {
                unparsed_value: $(this).val()
            },
-           success: function (xhr) {
-               alert($.parseJSON(xhr.responseText).SuccessMessage);
+           beforeSend:function(){
+               return confirm("Are you sure you want to copy data?");
            },
-           error: function (xhr, textStatus, errorThrown) {
-               if (xhr.status !== 200) {
-                   alert($.parseJSON(xhr.responseText).SuccessMessage);
-               }
+           success: function (data) {
+               alert(data.SuccessMessage);
+           },
+           error: function (data) {
+               alert(data.SuccessMessage);
            }
        });
     });
@@ -530,34 +553,23 @@
         $.ajax({
            type: "PUT",
            headers:{"X-CSRFToken": $crf_token},
+           dataType: "json",
            xhrFields: {
                withCredentials: true
-           },
-           xhr: function() {
-               var xhr = new XMLHttpRequest();
-               xhr.onreadystatechange = function() {
-                   if (xhr.readyState == 2) {
-                       if (xhr.status == 200) {
-                           xhr.responseType = "blob";
-                       } else {
-                           xhr.responseType = "text";
-                       }
-                   }
-               };
-               return xhr;
            },
            url: "/api/v1/dbTableAction/truncate?table_name=" + bt_val[0]
                 + "&dst_id="+ bt_val[1] ,
            data: {
                unparsed_value: $(this).val()
            },
-           success: function (xhr) {
-               alert($.parseJSON(xhr.responseText).SuccessMessage);
+           beforeSend:function(){
+               return confirm("Are you sure you want to truncate?");
            },
-           error: function (xhr, textStatus, errorThrown) {
-               if (xhr.status !== 200) {
-                   alert($.parseJSON(xhr.responseText).SuccessMessage);
-               }
+           success: function (data) {
+               alert(data.SuccessMessage);
+           },
+           error: function (data) {
+               alert(data.SuccessMessage);
            }
        });
     });
@@ -603,19 +615,16 @@
             var isMismatchRow = parseInt(row.src_row_count, 10) !== parseInt(row.dst_row_count, 10);
             html.push('<p align="center">')
             if (isGeom) {
-                html.push('<i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i> ')
+                html.push('<i class="fa fa-map-marker" aria-hidden="true" title="Geom"></i>')
             }
             if (hasModule) {
-                html.push('<i class="fa fa-adjust" aria-hidden="true" title="Module ID"></i> ')
+                html.push('<i class="fa fa-adjust" aria-hidden="true" title="Module ID"></i>')
             }
             if (isMismatchRow) {
-                html.push('<i class="fa fa-times" style="color: red;" title="Row count mis-match"></i> ')
+                html.push('<i class="fa fa-times" style="color: red;" title="Row count mis-match"></i>')
             }
             if (isMismatchCol) {
-                html.push('<a " '
-                          + '  data-toggle="modal" data-remote="' + url_mask
-                          + '" data-target="#dataTypeCompareModal">' +
-                          '<i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i></a>')
+                html.push('<i class="fa fa-pen-square" aria-hidden="true" title="Mismatch in Cols"></i>')
             }
             if(!isGeom && !isMismatchRow && !isMismatchCol){
                 html.push('-')
@@ -628,33 +637,46 @@
     function extraInfoFormatterTable(value, row, index) {
         var html = []
         if(typeof(value) != undefined) {
-            var url_mask =
-                "{% url 'dbs:compare_data_types' id1=999999999 id2=666666666 table_name='DUMMY' %}"
-                    .replace('999999999', row.compare_dbs.src_db.id)
-                    .replace('666666666', row.compare_dbs.dst_db.id)
-                    .replace('DUMMY', value);
-
-
-            html.push('<a " '
-                      + '  data-toggle="modal" data-remote="' + url_mask
-                      + '" data-target="#dataTypeCompareModal"><button class="btn btn-secondary" type="button">' +
-                      value +
-                      '</button></a>')
-
-            html.push('</p>')
+            // var url_mask =
+            //     "{% url 'dbs:compare_data_types' id1=999999999 id2=666666666 table_name='DUMMY' %}"
+            //         .replace('999999999', row.compare_dbs.src_db.id)
+            //         .replace('666666666', row.compare_dbs.dst_db.id)
+            //         .replace('DUMMY', value);
+            //
+            //
+            // html.push('<a " '
+            //           + '  data-toggle="modal" data-remote="' + url_mask
+            //           + '" data-target="#dataTypeCompareModal"><button class="btn btn-secondary" type="button">' +
+            //           value +
+            //           '</button></a>')
+            //
+            // html.push('</p>')
+            html.push('<b>');
+            html.push(value);
+            html.push('</b>');
         }
         return html.join('')
     }
 
     function operationFormatter(value, row, index) {
+        var url_mask =
+            "{% url 'dbs:compare_data' id1=999999999 id2=666666666 table_name='DUMMY' %}"
+                .replace('999999999', row.compare_dbs.src_db.id)
+                .replace('666666666', row.compare_dbs.dst_db.id)
+                .replace('DUMMY', value);
         return [
             '<p align="center">',
-            '{% csrf_token %}',
-            '<button id="btn-compare-real-data" type="button" value="' + ''
+            '<a data-toggle="modal" data-remote="' + url_mask + '" data-target="#dataCompareModal">' +
+            '<button id="btn-compare-real-d" type="button" value="' + ''
             + row.table_name + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
-            '" class="btn btn-icon btn-warning" title="Compare Data">',
-            '<i class="fas fa-anchor" aria-hidden="true"></i>',
-            '</button>',
+            '" class="btn btn-icon btn-warning" title="Compare data">',
+            '<i class="fas fa-drafting-compass" aria-hidden="true"></i>',
+            '</button></a>',
+            // '<button id="btn-compare-fk-ui" type="button" value="' + ''
+            // + row.table_name + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
+            // '" class="btn btn-icon btn-warning" title="Compare PK/UI">',
+            // '<i class="fas fa-anchor" aria-hidden="true"></i>',
+            // '</button>',
             '<button id="btn-copy" type="button" value="' + ''
             + row.table_name + '::' + row.src_row_count + '::' + row.compare_dbs.src_db.id + '::' + row.compare_dbs.dst_db.id +
             '" class="btn btn-icon btn-info" title="Copy to PG">',
@@ -669,6 +691,16 @@
         ].join('')
     }
 
+    function idFormatter(row) {
+        var count = 0
+        $.each(row, function (key, value1) {
+            if (value1) {
+                count++
+            }
+        })
+        return '<b><p style="color:red;font-size:18px;">Total : ' + count + '</p></b>'
+    }
+
     function footerSrcFormatter(row) {
         var count = 0
         $.each(row, function (key, value1) {
@@ -676,7 +708,17 @@
                 count++
             }
         })
-        return count
+        return '<b><p style="color:red;font-size:18px;">' + count + '</p></b>'
+    }
+
+    function footerSrcCountFormatter(row) {
+        var count = 0
+        $.each(row, function (key, value1) {
+            if (value1 && (value1.src_row_count !== 0 && value1.src_row_count !== null)) {
+                count++
+            }
+        })
+        return '<b><p style="color:red;font-size:18px;">' + count + '</p></b>'
     }
 
     function footerDstFormatter(row) {
@@ -686,7 +728,17 @@
                 count++
             }
         })
-        return count
+        return '<b><p style="color:red;font-size:18px;">' + count + '</p></b>'
+    }
+
+    function footerDstCountFormatter(row) {
+        var count = 0
+        $.each(row, function (key, value1) {
+            if (value1 && (value1.dst_row_count !== 0 && value1.dst_row_count !== null)) {
+                count++
+            }
+        })
+        return '<b><p style="color:red;font-size:18px;">' + count + '</p></b>'
     }
 
     function detailFKFormatter(index, row) {

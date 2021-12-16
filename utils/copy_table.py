@@ -1,7 +1,8 @@
 import logging
 from utils.script_scrapper import scrapper
-from utils.queries import O_RET_TABLE_ROW_QUERY, O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q
+from utils.queries import O_RET_TABLE_ROW_QUERY, O_PRIM_KEY_SCRIPT_Q, O_UNI_KEY_SCRIPT_Q, P_PRIM_KEY_SCRIPT_Q, P_UNI_KEY_SCRIPT_Q
 from django_rq import job
+from utils.enums import DbType
 from app.dbs.models import DBStats, DBCompare
 from utils.common_func import send_notification
 
@@ -31,17 +32,20 @@ class xerox:
 
 
     def get_primary_key(self):
-        return scrapper(db_type=self.src_db_type,
-                        main_db=self.src_db).get_pk_of_table(self.table_name, O_PRIM_KEY_SCRIPT_Q)
+        if self.src_db.type == DbType.ORACLE:
+            return scrapper(main_db=self.src_db).get_pk_of_table(self.table_name, O_PRIM_KEY_SCRIPT_Q)
+        else:
+            return scrapper(main_db=self.src_db).get_pk_of_table(self.table_name, P_PRIM_KEY_SCRIPT_Q)
 
     def get_unique_key(self):
-        return scrapper(db_type=self.src_db_type,
-                        main_db=self.src_db).get_uk_of_table(self.table_name, self.src_schema_name, O_UNI_KEY_SCRIPT_Q)
+        if self.src_db.type == DbType.ORACLE:
+            return scrapper(main_db=self.src_db).get_uk_of_table(self.table_name, self.src_schema_name, O_UNI_KEY_SCRIPT_Q)
+        else:
+            return scrapper(main_db=self.src_db).get_uk_of_table(self.table_name, self.src_schema_name, P_UNI_KEY_SCRIPT_Q)
 
     @job
     def insert_rows(self, data, col_names, commit_each=False):
-        cur_cont, err_rec = scrapper(db_type=self.dst_db_type,
-                                     main_db=self.dst_db).insert_row(self.table_name,
+        cur_cont, err_rec = scrapper(main_db=self.dst_db).insert_row(self.table_name,
                                                                      data, col_names,
                                                                      self.table_row_count,
                                                                      commit_each=commit_each)
@@ -66,8 +70,7 @@ class xerox:
             if pk_col is None:
                 pk_col = self.get_unique_key()
 
-            data, col_names = scrapper(db_type=self.src_db_type,
-                                       main_db=self.src_db).crawl_db(self.table_name, int(self.table_row_count), pk_col,
+            data, col_names = scrapper(main_db=self.src_db).crawl_db(self.table_name, int(self.table_row_count), pk_col,
                                                                      upper_bound=self.upper_bound)
 
             divide_by = 1000

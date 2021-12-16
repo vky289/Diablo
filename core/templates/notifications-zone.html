@@ -43,19 +43,23 @@
               </tr>
               <div class="bg-dark">
                 {% for notif in notifications %}
-                {% if notif.deleted == False %}
-                  {% if notif.unread %}
-                    <tr class="bg-light text-darker">
+                  {% if notif.deleted == False %}
+                    {% if notif.unread %}
+                      <tr class="bg-light text-darker">
                     {% else %}
                       <tr class="bg-dark">
                     {% endif %}
                   {% else %}
-                <tr class="bg-danger">
+                    <tr class="bg-danger">
                   {% endif %}
                   <th scope="row"></th>
                   <td class="text-danger"><input class="form-check-input" name="checks[]" type="checkbox" value="{{ notif.id }}"
                              id="flexCheckNotification-{{ notif.id }}">
-                    <label class="form-check-label" for="flexCheckNotification-{{ notif.id }}">{{ notif.verb }}</label></td>
+                    {{ notif.verb }}
+                    {% if notif.notificationcta.cta_link %}
+                      <a href="{% url 'dbTableResultDownload' notif.notificationcta.cta_link %}">Click Here</a>
+                    {% endif %}
+                  </td>
                   <td>{{ notif.timestamp|print_timestamp }}</td>
                 </tr>
                 {% endfor %}

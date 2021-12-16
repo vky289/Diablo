@@ -15,13 +15,10 @@ from app.core.models import SYSetting
 
 
 class scrapper:
-    def __init__(self, main_db, db_type=None):
+    def __init__(self, main_db):
         self.log = logging.getLogger(__name__)
         self.main_db = main_db
-        if db_type is None:
-            self.db_type = main_db.type
-        else:
-            self.db_type = db_type
+        self.db_type = main_db.type
         self.conn = None
 
     def check_table_exists(self, table_name):
@@ -59,20 +56,20 @@ class scrapper:
             else:
                 return self.conn
 
-    def get_table_desc_cols(self, schema_name, SCRIPT_Q):
+    def get_table_desc_cols(self, SCRIPT_Q):
         result = None
         col_names = None
         try:
             if self.db_type == DbType.ORACLE:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
-                rows = cur.execute(SCRIPT_Q, SCH=schema_name)
+                rows = cur.execute(SCRIPT_Q, SCH=self.main_db.username)
                 col_names = [desc[0] for desc in cur.description]
                 result = rows.fetchall()
             if self.db_type == DbType.POSTGRES:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
-                cur.execute(SCRIPT_Q.replace('$SCHEMA', "'" + schema_name + "'"))
+                cur.execute(SCRIPT_Q, {'SCHEMA': self.main_db.username})
                 col_names = [desc[0] for desc in cur.description]
                 result = cur.fetchall()
         except IOError as io_error:
@@ -131,8 +128,11 @@ class scrapper:
             if self.conn is not None:
                 self.conn.close()
 
-    def run_query_with_results(self, schema_name, SCRIPT_Q):
-        q_args = {'SCH': schema_name}
+    def run_query_with_results(self, schema_name, SCRIPT_Q, q_args=None):
+        if q_args is None and schema_name is not None:
+            q_args = {'SCH': schema_name}
+        if schema_name is not None:
+            q_args = dict({'SCH': schema_name}, **q_args)
         try:
             if self.db_type == DbType.ORACLE:
                 self.conn = self.get_connections(self.db_type)
@@ -161,7 +161,7 @@ class scrapper:
             if self.db_type == DbType.POSTGRES:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
-                cur.execute(P_PRIM_KEY_ALL_TABLE_Q % self.main_db.username)
+                cur.execute(P_PRIM_KEY_ALL_TABLE_Q, {'SCHEMA': self.main_db.username})
                 fetch_rows = cur.fetchall()
             if fetch_rows is not None and len(fetch_rows) > 0:
                 for e_row in fetch_rows:
@@ -215,7 +215,7 @@ class scrapper:
             if self.db_type == DbType.POSTGRES:
                 self.conn = self.get_connections(self.db_type)
                 cur = self.conn.cursor()
-                cur.execute(P_UNI_KEY_ALL_TABLE_Q % self.main_db.username)
+                cur.execute(P_UNI_KEY_ALL_TABLE_Q, {'SCHEMA': self.main_db.username})
                 fetch_rows = cur.fetchall()
             if fetch_rows is not None and len(fetch_rows) > 0:
                 for rows in fetch_rows:
@@ -321,7 +321,7 @@ class scrapper:
                     di[attr.name] = repr(value)
             return di
 
-    def crawl_db(self, table_name, table_row_count, pk_col, query=None, upper_bound=0, batch_size=5000):
+    def crawl_db(self, table_name, table_row_count, pk_col, query=None, upper_bound=0, batch_size=5000, only_ui_pk=False):
         data = []
         col_names = None
         if pk_col is None:
@@ -335,14 +335,32 @@ class scrapper:
             for lower_bound in range(upper_bound, table_row_count, batch_size):
                 if self.db_type == DbType.ORACLE:
                     if query is None:
-                        query = O_RET_TABLE_ROW_QUERY
+                        if only_ui_pk:
+                            if pk_col is not None and type(pk_col) is set or type(pk_col) is list:
+                                query = O_RET_TABLE_ROW_QUERY.replace('aka.*', str(','.join(map('aka.{0}'.format, pk_col))))
+                            else:
+                                query = O_RET_TABLE_ROW_QUERY.replace('aka.*', 'aka.{0}'.format(pk_col))
+                        else:
+                            query = O_RET_TABLE_ROW_QUERY
                     qqq = query.format(TAB=table_name)
-                    args = [str(','.join(pk_col)), str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1]
+                    if type(pk_col) is set:
+                        args = [str(','.join(pk_col)), str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1]
+                    else:
+                        args = [pk_col, pk_col, lower_bound,  lower_bound + batch_size - 1]
                     rows = cur.execute(qqq, args)
                 else:
                     if query is None:
-                        query = P_RET_TABLE_ROW_QUERY
-                    args = (str(','.join(pk_col)), table_name, str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1, )
+                        if only_ui_pk:
+                            if pk_col is not None and type(pk_col) is set or type(pk_col) is list:
+                                query = P_RET_TABLE_ROW_QUERY.replace('aka.*', str(','.join(map('aka.{0}'.format, pk_col))))
+                            else:
+                                query = P_RET_TABLE_ROW_QUERY.replace('aka.*', 'aka.{0}'.format(pk_col))
+                        else:
+                            query = P_RET_TABLE_ROW_QUERY
+                    if type(pk_col) is set:
+                        args = (str(','.join(pk_col)), table_name, str(','.join(pk_col)), lower_bound, lower_bound + batch_size - 1, )
+                    else:
+                        args = (pk_col, table_name, pk_col, lower_bound,  lower_bound + batch_size - 1, )
                     cur.execute(query % args)
                     rows = cur
                 if col_names is None:

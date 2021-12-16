@@ -20,7 +20,7 @@ from django.urls import path, include
 from rest_framework import routers
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
-from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView, DBInstanceActionView
+from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView, DBInstanceActionView, TableResultDownload
 from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet
 from rest_framework import permissions
 from rest_framework.authtoken.views import obtain_auth_token
@@ -58,6 +58,7 @@ urlpatterns = [
     path(r'api/v1/', include((router.urls, 'diablo'), namespace='api')),
     path(r'api/v1/dbInstanceAction/<slug:action>', DBInstanceActionView.as_view(), name="dbInstanceAction"),
     path(r'api/v1/dbTableAction/<slug:action>', DBTableActionView.as_view(), name="dbTableAction"),
+    path(r'api/v1/download/<slug:token>', TableResultDownload.as_view(), name="dbTableResultDownload"),
     path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 

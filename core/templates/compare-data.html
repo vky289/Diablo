@@ -1,0 +1,67 @@
+{% load static %}
+<div class="card">
+    <div class="card-body">
+        <fieldset>
+            <table class="table table-striped">
+                {% if table_name %}
+                <tr>
+                    <th colspan="3">Table : {{ table_name }}</th>
+                </tr>
+                {% endif %}
+                <tr>
+                    <th class="cols">PK/UI</th>
+                    {% if src_db_type %}
+                    <th class="cols">Src(<img src="{% static 'assets/img/' %}{{src_db_type}}.png" width="40" height="40"
+                                          alt="{{src_db_type}}">)</th>
+                    {% else %}
+                    <th class="cols">Src</th>
+                    {% endif %}
+                    <th class="cols">Column Name</th>
+                    {% if dst_db_type %}
+                    <th class="cols">Dst(<img src="{% static 'assets/img/' %}{{dst_db_type}}.png" width="40" height="40"
+                                          alt="{{dst_db_type}}">)</th>
+                    {% else %}
+                    <th class="cols">Dst</th>
+                    {% endif %}
+                    <th class="cols">PK/UI</th>
+                </tr>
+                {% for res in data_compare_res %}
+                <tr>
+                    {% if res.src_is_ui %}
+                    <td><i class="fa fa-check-circle"></i></td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+                    <td>{{ res.src_data_type }}</td>
+                    <td>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    {% if res.dst_is_ui %}
+                                    <input type="checkbox" checked name="compare_list" value="{{ res.column_name }}"
+                                           id="compare_list_{{ res.column_name }}_default">
+                                    {% else %}
+                                    <input type="checkbox" name="compare_list" value="{{ res.column_name }}" id="compare_list_{{ res.column_name }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <input type="text" value="{{ res.column_name }}" class="form-control" aria-label="{{ res.column_name }}">
+                        </div>
+                    </td>
+                    <td>{{ res.dst_data_type }}</td>
+                    {% if res.dst_is_ui %}
+                    <td><i class="fa fa-check-circle"></i></td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
+
+                </tr>
+                {% endfor %}
+            </table>
+            <div>
+                <button id="compareData" type="button" class="btn btn-info" value="{{table_name}}::{{id1}}::{{id2}}">
+                    <i class="fas fa-drafting-compass" aria-hidden="true"></i>  Compare Row Data</button>
+            </div>
+        </fieldset>
+    </div>
+</div>

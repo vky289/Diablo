@@ -12,7 +12,7 @@ from django_rq import get_queue
 from utils.compare_database import any_db
 
 from app.dbs.models import DBInstance, DBCompare, DBTableCompare, DBTableColumnCompare, DBCompareDBResults
-from utils.enums import DbType
+from utils.enums import DbType, DBSrcDst
 from utils.db_connection import oracle_db, postgres_db
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -110,10 +110,10 @@ class DbCompareDetailView(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['db_instance_or'] = DBInstance.objects.all().order_by('-host', 'name')
+        context['db_instance_or'] = DBInstance.objects.all().order_by('name', 'host')
         #context['db_instance_pg'] = context['db_instance_or']
         #context['db_instance_or'] = DBInstance.objects.filter(type='oracle').order_by('-host', 'name')
-        context['db_instance_pg'] = DBInstance.objects.filter(type='postgres').order_by('-host', 'name')
+        context['db_instance_pg'] = DBInstance.objects.filter(type='postgres').order_by('name', 'host')
         context['segment'] = 'compare-db'
         return context
 
@@ -131,8 +131,8 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
         db_compare = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
 
         dist_col_names = DBTableColumnCompare.objects.filter(compare_dbs=db_compare, table_name=table_name).distinct("column_name")
-        src_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare, table_name=table_name, type=DbType.ORACLE)
-        dst_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare, table_name=table_name, type=DbType.POSTGRES)
+        src_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare, table_name=table_name, type=DBInstance.objects.get(id=src_db).type)
+        dst_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare, table_name=table_name, type=DBInstance.objects.get(id=dst_db).type)
 
         dd = []
         for d_c_n in dist_col_names:
@@ -156,6 +156,92 @@ class DBCompareDataTypeResultView(PermissionRequiredMixin, ListView):
         context['dst_db_type'] = DBInstance.objects.get(id=dst_db).type
         context['segment'] = 'compare-db'
         return context
+
+
+class DBCompareDataResultView(PermissionRequiredMixin, ListView):
+    permission_required = 'dbs.view_dbtablecolumncompare'
+    model = DBTableColumnCompare
+    template_name = 'compare-data.html'
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        src_db = self.kwargs['id1']
+        dst_db = self.kwargs['id2']
+        table_name = self.kwargs['table_name']
+        if table_name is not None:
+            table_name = table_name.upper()
+        db_compare = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
+
+        dist_col_names = DBTableColumnCompare.objects.filter(compare_dbs=db_compare,
+                                                             table_name=table_name).distinct("column_name")
+        src_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare,
+                                                            table_name=table_name,
+                                                            type=DBInstance.objects.get(id=src_db).type,
+                                                            src_dst=DBSrcDst.SRC)
+        dst_table_col = DBTableColumnCompare.objects.filter(compare_dbs=db_compare,
+                                                            table_name=table_name,
+                                                            type=DBInstance.objects.get(id=dst_db).type,
+                                                            src_dst=DBSrcDst.DST)
+
+        dd = []
+        for d_c_n in dist_col_names:
+            final_dict = dict()
+            dd_1 = d_c_n.column_name
+            final_dict['column_name'] = dd_1
+            final_dict['ui'] = dd_1
+            for src in src_table_col:
+                if dd_1 == src.column_name:
+                    final_dict['src_data_type'] = src.datatype + '(' + src.precision + ')'
+                    final_dict['src_is_ui'] = src.is_ui
+
+            for dst in dst_table_col:
+                if dd_1 == dst.column_name:
+                    final_dict['dst_data_type'] = dst.datatype + '(' + dst.precision + ')'
+                    final_dict['dst_is_ui'] = dst.is_ui
+            dd.append(final_dict)
+        context['data_compare_res'] = dd
+        context['id1'] = src_db
+        context['id2'] = dst_db
+        context['table_name'] = table_name
+        context['src_db_type'] = DBInstance.objects.get(id=src_db).type
+        context['dst_db_type'] = DBInstance.objects.get(id=dst_db).type
+        context['segment'] = 'compare-db'
+        return context
+
+    # def post(self, request, *args, **kwargs):
+    #     if request.method == 'POST':
+    #         src_db, dst_db, compare_db = get_src_db_dst_db_with_compare_db(request, self.kwargs)
+    #         if self.request.POST.get('compareData'):
+    #             compare_list = self.request.POST.getlist('compare_list')
+    #         return HttpResponseRedirect(reverse('dbs:compare_db_results', kwargs={'id1': src_db.id, 'id2': dst_db.id}))
+
+
+def get_src_db_dst_db_with_compare_db(request, kwargs, src_id, dst_id):
+    src_db, dst_db, compare_db = None, None, None
+    if len(kwargs) > 1:
+        src_id = kwargs['id1']
+        dst_id = kwargs['id2']
+    try:
+        src_db = DBInstance.objects.get(id=src_id)
+        dst_db = DBInstance.objects.get(id=dst_id)
+
+        if src_db and dst_db:
+            try:
+                ob = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
+                ob.last_compared = datetime.now(central)
+                ob.save()
+                compare_db = ob
+            except DBCompare.DoesNotExist:
+                compare_db = DBCompare()
+                compare_db.src_db = src_db
+                compare_db.dst_db = dst_db
+                compare_db.last_compared = datetime.now(central)
+                compare_db.save()
+    except DBInstance.DoesNotExist:
+        messages.success(request, 'Something went wrong! Src_DB Dst_DB can\'t be mapped. Contact Admin')
+
+    return src_db, dst_db, compare_db
 
 
 def record_compare_start(compare_db, request, src_id, dst_id, func_name):
@@ -223,30 +309,11 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
         dst_db = None
         compare_db = None
         if request.method == 'POST':
-            try:
-                if len(kwargs) > 1:
-                    src_id = self.kwargs['id1']
-                    dst_id = self.kwargs['id2']
-                    src_db = DBInstance.objects.get(id=src_id)
-                    dst_db = DBInstance.objects.get(id=dst_id)
-            except DBInstance.DoesNotExist:
-                messages.success(request, 'Something went wrong! Src_DB Dst_DB can\'t be mapped. Contact Admin')
-            try:
-                if len(kwargs) > 1:
-                    ob = DBCompare.objects.get(src_db=src_db, dst_db=dst_db)
-                    ob.last_compared = datetime.now(central)
-                    ob.save()
-                    compare_db = ob
-            except DBCompare.DoesNotExist:
-                compare_db = DBCompare()
-                compare_db.src_db = src_db
-                compare_db.dst_db = dst_db
-                compare_db.last_compared = datetime.now(central)
-                compare_db.save()
+            src_id = self.request.POST.get('src_db')
+            dst_id = self.request.POST.get('dst_db')
+            src_db, dst_db, compare_db = get_src_db_dst_db_with_compare_db(request, self.kwargs, src_id, dst_id)
             if self.request.POST.get('compare'):
                 if request.user.has_perm('dbs.can_compare_db'):
-                    src_id = self.request.POST.get('src_db')
-                    dst_id = self.request.POST.get('dst_db')
                     try:
                         src_db = DBInstance.objects.get(id=src_id)
                         dst_db = DBInstance.objects.get(id=dst_id)
@@ -273,6 +340,10 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
 
                     args = (request.user, src_db, dst_db, compare_db)
 
+                    # any_db(request.user, src_db, dst_db, compare_db).row_count_db()
+                    # any_db(request.user, src_db, dst_db, compare_db).table_column_pk_ui_comparision()
+                    # any_db(request.user, src_db, dst_db, compare_db).table_data_type_db()
+
                     queue_high = get_queue('high')
                     record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_rows.__name__)
                     queue_high.enqueue(compare_db_rows, args=args)
@@ -282,6 +353,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     queue_high.enqueue(compare_db_for_geom_module_id, args=args, depends_on=data_type_compare)
                     record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_tables_fk_ui.__name__)
                     queue_high.enqueue(compare_db_tables_fk_ui, args=args, depends_on=data_type_compare)
+
 
                     queue_low = get_queue('low')
                     record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_views.__name__)
@@ -294,8 +366,6 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     queue_low.enqueue(compare_db_trig, args=args)
                     record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_ind.__name__)
                     queue_low.enqueue(compare_db_ind, args=args)
-
-                    # compare_db_for_geom_module_id(request.user, src_db, dst_db, compare_db)
 
                     messages.success(request, 'DB table row comparisons started!')
                 else:

@@ -35,7 +35,7 @@ class Command(BaseCommand):
         if len(cols_to_avoid) == 0:
             sy_set = SYSetting()
             sy_set.name = 'COL_COMPARE_MAX'
-            sy_set.value = '1000'
+            sy_set.value = '100000'
             sy_set.save()
 
         # To-Do: Cleanup RQQueue Jobs

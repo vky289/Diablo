@@ -165,7 +165,7 @@ def index(request):
     data_compared = RequestEvent.objects.filter(Q(url__contains='/dbs/compare/')).annotate(month=TruncMonth(
         'datetime')).values(
         'month').annotate(c=Count('month')).values('month', 'c').order_by()
-    real_table_data_compared = RequestEvent.objects.filter(Q(url__contains='/api/v1/dbTableAction/compareRawData')).annotate(month=TruncMonth(
+    real_table_data_compared = RequestEvent.objects.filter(Q(url__contains='/api/v1/dbTableAction/comparePKUI')).annotate(month=TruncMonth(
         'datetime')).values(
         'month').annotate(c=Count('month')).values('month', 'c').order_by()
     api_calls = RequestEvent.objects.filter(Q(url__contains='/api/v1/')).annotate(month=TruncMonth(
@@ -226,7 +226,8 @@ class NotificationDetailsView(PermissionRequiredMixin, NotificationViewList):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['notifications'] = Notification.objects.filter(recipient=self.request.user).active()
+        notifications = Notification.objects.filter(recipient=self.request.user).active()
+        context['notifications'] = notifications
         return context
 
     def post(self, request, *args, **kwargs):
