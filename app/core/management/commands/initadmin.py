@@ -31,11 +31,17 @@ class Command(BaseCommand):
             sy_set.name = 'COL_TO_AVOID'
             sy_set.value = 'ROW_NUM,COMMENT_ID,GEOM'
             sy_set.save()
-        cols_to_avoid = SYSetting.objects.filter(name='COL_COMPARE_MAX')
-        if len(cols_to_avoid) == 0:
+        cols_compare_max = SYSetting.objects.filter(name='COL_COMPARE_MAX')
+        if len(cols_compare_max) == 0:
             sy_set = SYSetting()
             sy_set.name = 'COL_COMPARE_MAX'
             sy_set.value = '100000'
+            sy_set.save()
+        commit_interval = SYSetting.objects.filter(name='COMMIT_INTERVAL')
+        if len(commit_interval) == 0:
+            sy_set = SYSetting()
+            sy_set.name = 'COMMIT_INTERVAL'
+            sy_set.value = '10000'
             sy_set.save()
 
         # To-Do: Cleanup RQQueue Jobs

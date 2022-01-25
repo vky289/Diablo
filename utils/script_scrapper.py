@@ -382,7 +382,13 @@ class scrapper:
                 self.conn.close()
         return data, col_names
 
-    def insert_row(self, table_name, list_values, col_names, row_count=None, commit_interval=10000, commit_each=False):
+    def insert_row(self, table_name, list_values, col_names, row_count=None, commit_each=False):
+        commit_interval = 1
+        try:
+            cols = SYSetting.objects.get(name="COMMIT_INTERVAL")
+            commit_interval = cols.value
+        except SYSetting.DoesNotExist:
+            pass
         err_rec = 0
         cont = itertools.count()
         q_tuple_list = []
@@ -404,6 +410,7 @@ class scrapper:
                             # self.conn.commit()
                             q_tuple_list = []
                     except Exception as w:
+                        q_tuple_list = []
                         self.log.error("Error in inserting table {}".format(str(w)))
                         self.conn.rollback()
                         if not commit_each:

@@ -45,6 +45,9 @@ P_PRO_SCRIPT_Q = '''SELECT UPPER(p.proname) AS function_name FROM pg_proc p JOIN
 O_IND_SCRIPT_Q = '''select INDEX_NAME from USER_INDEXES where TABLE_OWNER = :SCH'''
 P_IND_SCRIPT_Q = '''SELECT UPPER(indexname) FROM pg_indexes WHERE schemaname = %(SCHEMA)s'''
 
+O_PROC_SCRIPT_Q = '''SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OBJECT_TYPE IN ('FUNCTION','PROCEDURE','PACKAGE') and OWNER = :SCH'''
+P_PROC_SCRIPT_Q = '''SELECT UPPER(routine_name) FROM information_schema.routines WHERE routine_type = 'FUNCTION' AND routine_schema = %(SCHEMA)s'''
+
 O_UNI_KEY_SCRIPT_Q = '''SELECT c.column_name 
 FROM all_indexes i,
      all_ind_columns c

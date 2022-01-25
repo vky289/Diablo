@@ -13,7 +13,7 @@ from app.dbs.serializers import DBTableCompareSerializer, DBTableColumnSerialize
 from utils.enums import DBObject, DbType
 from utils.db_connection import postgres_db, oracle_db
 from diablo.tasks import compare_db_rows, compare_db_data_types, truncate_table, copy_table_content, compare_db_views, compare_db_seq, \
-    compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data, compare_db_for_geom_module_id, compare_db_tables_fk_ui
+    compare_db_fk, compare_db_trig, compare_db_ind, delete_instance_n_its_data, compare_db_for_geom_module_id, compare_db_tables_fk_ui, compare_db_proc
 from utils.compare_data import comparator
 from app.core.models import SYSetting
 from app.dbs.tasks import real_table_data_compare
@@ -132,6 +132,23 @@ class DBTrigListSet(viewsets.ModelViewSet):
         else:
             return self.queryset.filter(type=DBObject.TRIGGER).order_by("table_name")
 
+
+class DBProcListSet(viewsets.ModelViewSet):
+    serializer_class = DbObjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = DBObjectCompare.objects.all()
+    http_method_names = ['get', ]
+
+    def get_queryset(self):
+        src_db = self.request.query_params.get('src_db')
+        dst_db = self.request.query_params.get('dst_db')
+        compare_db = self.request.query_params.get('compare_db')
+        if compare_db is not None:
+            return self.queryset.filter(type=DBObject.PROCEDURE, compare_dbs=compare_db).order_by("table_name")
+        elif src_db is not None and dst_db is not None:
+            return self.queryset.filter(type=DBObject.PROCEDURE, compare_dbs=DBCompare.objects.get(src_db=src_db, dst_db = dst_db)).order_by("table_name")
+        else:
+            return self.queryset.filter(type=DBObject.PROCEDURE).order_by("table_name")
 
 class DBIndListSet(viewsets.ModelViewSet):
     serializer_class = DbObjectSerializer
@@ -390,6 +407,8 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
             queue_low.enqueue(compare_db_trig, args=args)
             self.record_compare_start(compare_db=compare_db, func_name=compare_db_ind.__name__)
             queue_low.enqueue(compare_db_ind, args=args)
+            self.record_compare_start(compare_db=compare_db, func_name=compare_db_proc.__name__)
+            queue_low.enqueue(compare_db_proc, args=args)
 
 
             return JsonResponse(data={'SuccessMessage': 'DB table row comparisons started!'})
@@ -409,7 +428,7 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
                 row_count = val_rows[1][0:len(val_rows[1])-1]
                 batch_size = 100000
                 for upper_bound in range(0, int(row_count), batch_size):
-                    copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
+                    copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, 10000, False)
             return JsonResponse(data={'SuccessMessage': 'Bulk copy initiated! for the DB table {}'.format(b_tables)})
         elif action == 'copy':
             self.cant_be_empty('src_id', src_id)
@@ -423,7 +442,7 @@ class DBTableActionView(generics.RetrieveUpdateAPIView):
             batch_size = 100000
             for upper_bound in range(0, int(row_count), batch_size):
                 copy_table_content.delay(request.user, src_db, dst_db, table_name,
-                                         upper_bound + batch_size - 1, upper_bound, False)
+                                         upper_bound + batch_size - 1, upper_bound, True)
             return JsonResponse(data={'SuccessMessage': 'Copy initiated for the DB table {}'.format(table_name)})
         elif action == 'truncate':
             self.cant_be_empty('table_name', table_name)

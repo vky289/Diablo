@@ -21,7 +21,7 @@ from rest_framework import routers
 
 from app.authentication.views import UserViewSet, GroupViewSet, PermissionViewSet
 from app.dbs.views.api_views import DBInstanceListSet, DBCompareListSet, DBTableActionView, DBInstanceActionView, TableResultDownload
-from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet
+from app.dbs.views.api_views import DBViewListSet, DBFKListSet, DBSeqListSet, DBTrigListSet, DBIndListSet, DBTableListSet, DBTableColumnListSet, DBProcListSet
 from rest_framework import permissions
 from rest_framework.authtoken.views import obtain_auth_token
 from drf_yasg.views import get_schema_view
@@ -43,6 +43,7 @@ router.register(r'dbView', DBViewListSet, basename='dbView')
 router.register(r'dbInd', DBIndListSet, basename='dbInd')
 router.register(r'dbSeq', DBSeqListSet, basename='dbSeq')
 router.register(r'dbTrig', DBTrigListSet, basename='dbTrig')
+router.register(r'dbProc', DBProcListSet, basename='dbProc')
 
 urlpatterns = [
     path(r'admin/', admin.site.urls),

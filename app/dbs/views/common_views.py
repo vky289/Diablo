@@ -3,7 +3,7 @@ from django.views.generic import ListView
 from django.contrib import messages
 from diablo.tasks import compare_db_rows, compare_db_data_types, compare_db_tables_fk_ui, \
     compare_db_views, compare_db_seq, compare_db_fk, \
-    compare_db_trig, compare_db_ind, compare_db_for_geom_module_id, enable_all_postgre_triggers, disable_all_postgre_triggers
+    compare_db_trig, compare_db_ind, compare_db_for_geom_module_id, enable_all_postgre_triggers, disable_all_postgre_triggers, compare_db_proc
 from diablo.tasks import truncate_table, copy_table_content
 from diablo.tasks import delete_instance_n_its_data
 from django.urls import reverse
@@ -366,6 +366,8 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     queue_low.enqueue(compare_db_trig, args=args)
                     record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_ind.__name__)
                     queue_low.enqueue(compare_db_ind, args=args)
+                    record_compare_start(compare_db=compare_db, request=request, src_id=src_id, dst_id=dst_id, func_name=compare_db_proc.__name__)
+                    queue_low.enqueue(compare_db_proc, args=args)
 
                     messages.success(request, 'DB table row comparisons started!')
                 else:
@@ -386,7 +388,7 @@ class DbCompareResultView(PermissionRequiredMixin, ListView):
                     table_name = self.kwargs['table_name']
                     batch_size = 100000
                     for upper_bound in range(0, int(row_count), batch_size):
-                        copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, False)
+                        copy_table_content.delay(request.user, src_db, dst_db, table_name, upper_bound + batch_size - 1, upper_bound, True)
                         # xerox(src_db=src_db, dst_db=dst_db, table_name=table_name,
                         #       table_row_count=row_count, upper_bound=upper_bound, commit_each=True).execute_it()
                     messages.success(request, 'Copy initiated for the DB table {}'.format(table_name))

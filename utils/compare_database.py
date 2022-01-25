@@ -5,7 +5,7 @@ from utils.script_scrapper import scrapper
 from app.dbs.models import DBTableCompare, DBTableColumnCompare, DBObjectCompare, DBObjectFKCompare
 from utils.queries import O_ROW_COUNT, P_ROW_COUNT2, O_COLUMN_NAMES, P_COLUMN_NAMES, O_VW_SCRIPT_Q, P_VW_SCRIPT_Q, O_IND_SCRIPT_Q, \
     P_IND_SCRIPT_Q, O_SEQ_SCRIPT_Q, P_SEQ_SCRIPT_Q, \
-    O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q, P_ALL_TAB_SCRIPT_Q, P_COUNT_ROWS_Q
+    O_TRIG_SCRIPT_Q, P_TRIG_SCRIPT_Q, P_ALL_TAB_SCRIPT_Q, P_COUNT_ROWS_Q, O_PROC_SCRIPT_Q, P_PROC_SCRIPT_Q
 from utils.queries import O_FK_LIST, P_FK_LIST
 from utils.common_func import send_notification
 
@@ -178,6 +178,15 @@ class any_db:
             send_notification(self.user, "DB {} -> {} Index comparison completed".format(self.src_db.name, self.dst_db.name))
         except Exception as e:
             send_notification(self.user, "DB {} -> {} exception occurred during Index comparison- {}".format(
+                self.src_db.name, self.dst_db.name, e))
+
+    def cdata_proc(self):
+        try:
+            send_notification(self.user, "DB {} -> {} Procedure/Function comparison started".format(self.src_db.name, self.dst_db.name))
+            self.x_c_data_extract(DBObject.PROCEDURE, O_PROC_SCRIPT_Q, P_PROC_SCRIPT_Q)
+            send_notification(self.user, "DB {} -> {} Procedure/Function comparison completed".format(self.src_db.name, self.dst_db.name))
+        except Exception as e:
+            send_notification(self.user, "DB {} -> {} exception occurred during Procedure/Function comparison- {}".format(
                 self.src_db.name, self.dst_db.name, e))
 
     def cdata_seq(self):

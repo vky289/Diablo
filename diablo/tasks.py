@@ -121,6 +121,13 @@ def compare_db_ind(user, src_db, dst_db, compare_db):
 
 
 @job('low')
+def compare_db_proc(user, src_db, dst_db, compare_db):
+    get_current_queue_items()
+    any_db(user, src_db, dst_db, compare_db).cdata_proc()
+    wrap_up_job(compare_db_proc.__name__, compare_db)
+
+
+@job('low')
 def compare_db_seq(user, src_db, dst_db, compare_db):
     get_current_queue_items()
     any_db(user, src_db, dst_db, compare_db).cdata_seq()

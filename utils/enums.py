@@ -12,6 +12,7 @@ class DBObject(models.TextChoices):
     SEQUENCE = 'sequence', _('sequence')
     TRIGGER = 'trigger', _('trigger')
     INDEX = 'index', _('index')
+    PROCEDURE = 'procedure', _('procedure')
 
 
 class DBSrcDst(models.TextChoices):

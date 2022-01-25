@@ -92,6 +92,10 @@
                                     <td>FK's</td>
                                     <td><i id="compare_db_fk" class='fa fa-times' style="color:red"></i></td>
                                 </tr>
+                                <tr>
+                                    <td>Procedure</td>
+                                    <td><i id="compare_db_proc" class='fa fa-times' style="color:red"></i></td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -147,6 +151,9 @@
                     <a class="nav-item nav-link" id="nav-fk-tab" data-toggle="tab" href="#table_fk" role="tab"
                        aria-controls="table_fk"
                     aria-selected="false">Foreign Key</a>
+                    <a class="nav-item nav-link" id="nav-proc-tab" data-toggle="tab" href="#table_proc" role="tab"
+                       aria-controls="table_proc"
+                       aria-selected="false">Procedure/Function</a>
                 </div>
             </nav>
             <div class="card-body">
@@ -346,6 +353,39 @@
                                             src="{% static 'assets/img/' %}{{dst_db_v.type}}.png"
                                             width="40" height="40" alt="{{dst_db_v.type}}"></th>
                                 </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div class="table-responsive tab-pane fade accordion" id="table_proc" role="tabpanel" aria-labelledby="table_proc">
+                        <table class="table"
+                               data-toolbar="#toolbar"
+                               data-toggle="table"
+                               data-search="true"
+                               data-click-to-select="true"
+                               data-show-refresh="true"
+                               data-detail-view="true"
+                               data-show-footer="true"
+                               data-show-columns="false"
+                               data-detail-formatter="detailFormatter"
+                               data-pagination="true"
+                               data-page-list="[25, 50, 100, all]"
+                               data-page-size="25"
+                               data-url="{% url 'api:dbProc-list' %}?src_db={{id1}}&dst_db={{id2}}&format=json"
+                               data-response-handler="responseHandler">
+                            <caption>Procedure comparison</caption>
+                            <thead>
+                            <tr>
+                                <th data-field="table_name" data-sortable="true" data-footer-formatter="idFormatter" scope="col">Procedure/Function
+                                    Name</th>
+                                <th data-field="src_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerSrcFormatter" scope="col">Src <img
+                                        src="{% static 'assets/img/' %}{{src_db_v.type}}.png"
+                                        width="40" height="40" alt="{{src_db_v.type}}"></th>
+                                <th data-field="dst_exists" data-sortable="true" data-formatter="booleanFormatter"
+                                    data-footer-formatter="footerDstFormatter" scope="col">Dst <img
+                                        src="{% static 'assets/img/' %}{{dst_db_v.type}}.png"
+                                        width="40" height="40" alt="{{dst_db_v.type}}"></th>
+                            </tr>
                             </thead>
                         </table>
                     </div>
@@ -768,7 +808,7 @@
     function make_status_call(bt_val) {
         var all_list = ['#compare_db_rows', '#compare_db_data_types', '#compare_db_tables_fk_ui',
                         '#compare_db_views', '#compare_db_ind', '#compare_db_seq',
-                        '#compare_db_trig', '#compare_db_fk'];
+                        '#compare_db_trig', '#compare_db_fk', '#compare_db_proc'];
         function reload_change_icon(id_name) {
             document.querySelector(id_name).classList.remove('fa-times');
             document.querySelector(id_name).classList.add('fa-spinner');
