@@ -12,7 +12,7 @@ configparser==5.0.2
 psycopg2-binary~=2.8.6
 psycopg2~=2.8.6
 cx_Oracle~=8.2.1
-lxml==4.6.3
+lxml~=4.6.5
 rq~=1.9.0
 pytz~=2021.1
 channels==3.0.4
